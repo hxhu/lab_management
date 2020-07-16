@@ -1,7 +1,14 @@
+<<<<<<< HEAD
 import { PlusOutlined } from '@ant-design/icons';
 import { Button, Divider, message, Input } from 'antd';
 import React, { useState, useRef } from 'react';
 import { PageContainer, FooterToolbar } from '@ant-design/pro-layout';
+=======
+import { DownOutlined, PlusOutlined } from '@ant-design/icons';
+import { Button, Divider, Dropdown, Menu, message, Input } from 'antd';
+import React, { useState, useRef } from 'react';
+import { PageHeaderWrapper } from '@ant-design/pro-layout';
+>>>>>>> 494123841f877198857dcd40ed10aaffa3e239be
 import ProTable from '@ant-design/pro-table';
 import CreateForm from './components/CreateForm';
 import UpdateForm from './components/UpdateForm';
@@ -76,7 +83,10 @@ const TableList = () => {
   const [updateModalVisible, handleUpdateModalVisible] = useState(false);
   const [stepFormValues, setStepFormValues] = useState({});
   const actionRef = useRef();
+<<<<<<< HEAD
   const [selectedRowsState, setSelectedRows] = useState([]);
+=======
+>>>>>>> 494123841f877198857dcd40ed10aaffa3e239be
   const columns = [
     {
       title: '规则名称',
@@ -164,11 +174,16 @@ const TableList = () => {
     },
   ];
   return (
+<<<<<<< HEAD
     <PageContainer>
+=======
+    <PageHeaderWrapper>
+>>>>>>> 494123841f877198857dcd40ed10aaffa3e239be
       <ProTable
         headerTitle="查询表格"
         actionRef={actionRef}
         rowKey="key"
+<<<<<<< HEAD
         toolBarRender={() => [
           <Button type="primary" onClick={() => handleModalVisible(true)}>
             <PlusOutlined /> 新建
@@ -211,6 +226,55 @@ const TableList = () => {
           <Button type="primary">批量审批</Button>
         </FooterToolbar>
       )}
+=======
+        toolBarRender={(action, { selectedRows }) => [
+          <Button type="primary" onClick={() => handleModalVisible(true)}>
+            <PlusOutlined /> 新建
+          </Button>,
+          selectedRows && selectedRows.length > 0 && (
+            <Dropdown
+              overlay={
+                <Menu
+                  onClick={async e => {
+                    if (e.key === 'remove') {
+                      await handleRemove(selectedRows);
+                      action.reload();
+                    }
+                  }}
+                  selectedKeys={[]}
+                >
+                  <Menu.Item key="remove">批量删除</Menu.Item>
+                  <Menu.Item key="approval">批量审批</Menu.Item>
+                </Menu>
+              }
+            >
+              <Button>
+                批量操作 <DownOutlined />
+              </Button>
+            </Dropdown>
+          ),
+        ]}
+        tableAlertRender={({ selectedRowKeys, selectedRows }) => (
+          <div>
+            已选择{' '}
+            <a
+              style={{
+                fontWeight: 600,
+              }}
+            >
+              {selectedRowKeys.length}
+            </a>{' '}
+            项&nbsp;&nbsp;
+            <span>
+              服务调用次数总计 {selectedRows.reduce((pre, item) => pre + item.callNo, 0)} 万
+            </span>
+          </div>
+        )}
+        request={(params, sorter, filter) => queryRule({ ...params, sorter, filter })}
+        columns={columns}
+        rowSelection={{}}
+      />
+>>>>>>> 494123841f877198857dcd40ed10aaffa3e239be
       <CreateForm onCancel={() => handleModalVisible(false)} modalVisible={createModalVisible}>
         <ProTable
           onSubmit={async value => {
@@ -252,7 +316,11 @@ const TableList = () => {
           values={stepFormValues}
         />
       ) : null}
+<<<<<<< HEAD
     </PageContainer>
+=======
+    </PageHeaderWrapper>
+>>>>>>> 494123841f877198857dcd40ed10aaffa3e239be
   );
 };
 

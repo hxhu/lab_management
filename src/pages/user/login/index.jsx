@@ -9,7 +9,13 @@ const { Tab, UserName, Password, Mobile, Captcha, Submit } = LoginForm;
 
 const LoginMessage = ({ content }) => (
   <Alert
+<<<<<<< HEAD
     style={{marginBottom: 24,}}
+=======
+    style={{
+      marginBottom: 24,
+    }}
+>>>>>>> 494123841f877198857dcd40ed10aaffa3e239be
     message={content}
     type="error"
     showIcon
@@ -33,7 +39,10 @@ const Login = props => {
   return (
     <div className={styles.main}>
       <LoginForm activeKey={type} onTabChange={setType} onSubmit={handleSubmit}>
+<<<<<<< HEAD
         {/* 账户密码登录 */}
+=======
+>>>>>>> 494123841f877198857dcd40ed10aaffa3e239be
         <Tab key="account" tab="账户密码登录">
           {status === 'error' && loginType === 'account' && !submitting && (
             <LoginMessage content="账户或密码错误（admin/ant.design）" />
@@ -60,9 +69,16 @@ const Login = props => {
             ]}
           />
         </Tab>
+<<<<<<< HEAD
         {/* 手机验证码登录 */}
         <Tab key="mobile" tab="手机号登录">
           {status === 'error' && loginType === 'mobile' && !submitting && (<LoginMessage content="验证码错误" />)}
+=======
+        <Tab key="mobile" tab="手机号登录">
+          {status === 'error' && loginType === 'mobile' && !submitting && (
+            <LoginMessage content="验证码错误" />
+          )}
+>>>>>>> 494123841f877198857dcd40ed10aaffa3e239be
           <Mobile
             name="mobile"
             placeholder="手机号"
@@ -92,8 +108,21 @@ const Login = props => {
           />
         </Tab>
         <div>
+<<<<<<< HEAD
           <Checkbox checked={autoLogin} onChange={e => setAutoLogin(e.target.checked)}>自动登录</Checkbox>
           <a style={{float: 'right'}}>忘记密码</a>
+=======
+          <Checkbox checked={autoLogin} onChange={e => setAutoLogin(e.target.checked)}>
+            自动登录
+          </Checkbox>
+          <a
+            style={{
+              float: 'right',
+            }}
+          >
+            忘记密码
+          </a>
+>>>>>>> 494123841f877198857dcd40ed10aaffa3e239be
         </div>
         <Submit loading={submitting}>登录</Submit>
         <div className={styles.other}>
@@ -101,7 +130,13 @@ const Login = props => {
           <AlipayCircleOutlined className={styles.icon} />
           <TaobaoCircleOutlined className={styles.icon} />
           <WeiboCircleOutlined className={styles.icon} />
+<<<<<<< HEAD
           <Link className={styles.register} to="/user/register">注册账户</Link>
+=======
+          <Link className={styles.register} to="/user/register">
+            注册账户
+          </Link>
+>>>>>>> 494123841f877198857dcd40ed10aaffa3e239be
         </div>
       </LoginForm>
     </div>

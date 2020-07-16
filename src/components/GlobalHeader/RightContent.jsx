@@ -1,9 +1,16 @@
 import { Tooltip, Tag } from 'antd';
 import { QuestionCircleOutlined } from '@ant-design/icons';
 import React from 'react';
+<<<<<<< HEAD
 import { connect, SelectLang } from 'umi';
 import Avatar from './AvatarDropdown';
 import HeaderSearch from '../HeaderSearch';
+=======
+import { connect } from 'umi';
+import Avatar from './AvatarDropdown';
+import HeaderSearch from '../HeaderSearch';
+import SelectLang from '../SelectLang';
+>>>>>>> 494123841f877198857dcd40ed10aaffa3e239be
 import styles from './index.less';
 
 const ENVTagColor = {
@@ -16,7 +23,11 @@ const GlobalHeaderRight = props => {
   const { theme, layout } = props;
   let className = styles.right;
 
+<<<<<<< HEAD
   if (theme === 'dark' && layout === 'top') {
+=======
+  if (theme === 'dark' && layout === 'topmenu') {
+>>>>>>> 494123841f877198857dcd40ed10aaffa3e239be
     className = `${styles.right}  ${styles.dark}`;
   }
 
@@ -49,9 +60,12 @@ const GlobalHeaderRight = props => {
       />
       <Tooltip title="使用文档">
         <a
+<<<<<<< HEAD
           style={{
             color: 'inherit',
           }}
+=======
+>>>>>>> 494123841f877198857dcd40ed10aaffa3e239be
           target="_blank"
           href="https://pro.ant.design/docs/getting-started"
           rel="noopener noreferrer"

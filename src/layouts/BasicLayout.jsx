@@ -5,7 +5,11 @@
  */
 import ProLayout, { DefaultFooter } from '@ant-design/pro-layout';
 import React, { useEffect } from 'react';
+<<<<<<< HEAD
 import { Link, useIntl, connect, history } from 'umi';
+=======
+import { Link, useIntl, connect } from 'umi';
+>>>>>>> 494123841f877198857dcd40ed10aaffa3e239be
 import { GithubOutlined } from '@ant-design/icons';
 import { Result, Button } from 'antd';
 import Authorized from '@/utils/Authorized';
@@ -105,8 +109,18 @@ const BasicLayout = props => {
     <ProLayout
       logo={logo}
       formatMessage={formatMessage}
+<<<<<<< HEAD
       onCollapse={handleMenuCollapse}
       onMenuHeaderClick={() => history.push('/')}
+=======
+      menuHeaderRender={(logoDom, titleDom) => (
+        <Link to="/">
+          {logoDom}
+          {titleDom}
+        </Link>
+      )}
+      onCollapse={handleMenuCollapse}
+>>>>>>> 494123841f877198857dcd40ed10aaffa3e239be
       menuItemRender={(menuItemProps, defaultDom) => {
         if (menuItemProps.isUrl || !menuItemProps.path) {
           return defaultDom;
