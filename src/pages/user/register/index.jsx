@@ -89,10 +89,7 @@ const Register = ({ submitting, dispatch, userAndregister }) => {
   };
 
   const onFinish = values => {
-<<<<<<< HEAD
     console.log(values)
-=======
->>>>>>> 494123841f877198857dcd40ed10aaffa3e239be
     dispatch({
       type: 'userAndregister/submit',
       payload: { ...values, prefix },
@@ -169,26 +166,12 @@ const Register = ({ submitting, dispatch, userAndregister }) => {
       </h3>
       <Form form={form} name="UserRegister" onFinish={onFinish}>
         <FormItem
-<<<<<<< HEAD
           name="username"
-=======
-          name="mail"
->>>>>>> 494123841f877198857dcd40ed10aaffa3e239be
           rules={[
             {
               required: true,
               message: formatMessage({
-<<<<<<< HEAD
                 id: 'userandregister.username.required',
-=======
-                id: 'userandregister.email.required',
-              }),
-            },
-            {
-              type: 'email',
-              message: formatMessage({
-                id: 'userandregister.email.wrong-format',
->>>>>>> 494123841f877198857dcd40ed10aaffa3e239be
               }),
             },
           ]}
@@ -196,11 +179,7 @@ const Register = ({ submitting, dispatch, userAndregister }) => {
           <Input
             size="large"
             placeholder={formatMessage({
-<<<<<<< HEAD
               id: '用户名',
-=======
-              id: 'userandregister.email.placeholder',
->>>>>>> 494123841f877198857dcd40ed10aaffa3e239be
             })}
           />
         </FormItem>
