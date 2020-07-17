@@ -78,11 +78,7 @@ export default {
   'POST /api/login/account': (req, res) => {
     const { password, userName, type } = req.body;
 
-<<<<<<< HEAD
     if (password === '960527' && userName === 'du') {
-=======
-    if (password === 'ant.design' && userName === 'admin') {
->>>>>>> 494123841f877198857dcd40ed10aaffa3e239be
       res.send({
         status: 'ok',
         type,
@@ -91,11 +87,7 @@ export default {
       return;
     }
 
-<<<<<<< HEAD
     if (password === '960527' && userName === 'hu') {
-=======
-    if (password === 'ant.design' && userName === 'user') {
->>>>>>> 494123841f877198857dcd40ed10aaffa3e239be
       res.send({
         status: 'ok',
         type,

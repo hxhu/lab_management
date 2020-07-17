@@ -34,19 +34,28 @@ export default defineConfig({
           component: './user/login',
         },
         {
-<<<<<<< HEAD
           name: '注册结果页',
           icon: 'smile',
           path: '/user/register-result',
           component: './user/register-result',
         },
         {
-=======
->>>>>>> 494123841f877198857dcd40ed10aaffa3e239be
           name: '注册页',
           icon: 'smile',
           path: '/user/register',
           component: './user/register',
+        },
+        {
+          name: '个人中心',
+          icon: 'smile',
+          path: '/user/center',
+          component: './user/center',
+        },
+        {
+          name: '个人设置',
+          icon: 'smile',
+          path: '/user/settings',
+          component: './user/settings',
         },
       ],
     },

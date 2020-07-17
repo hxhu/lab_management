@@ -20,8 +20,7 @@ class AvatarDropdown extends React.Component {
 
       return;
     }
-
-    history.push(`/account/${key}`);
+    history.push(`/user/${key}`);
   };
 
   render() {
@@ -34,48 +33,28 @@ class AvatarDropdown extends React.Component {
     } = this.props;
     const menuHeaderDropdown = (
       <Menu className={styles.menu} selectedKeys={[]} onClick={this.onMenuClick}>
-        {menu && (
-          <Menu.Item key="center">
-            <UserOutlined />
-            个人中心
-          </Menu.Item>
-        )}
-        {menu && (
-          <Menu.Item key="settings">
-            <SettingOutlined />
-            个人设置
-          </Menu.Item>
-        )}
-        {menu && <Menu.Divider />}
-
-        <Menu.Item key="logout">
-          <LogoutOutlined />
-          退出登录
-        </Menu.Item>
+        <Menu.Item key="center" icon={<UserOutlined />}>个人中心</Menu.Item>
+        <Menu.Item key="logout" icon={<LogoutOutlined />}>退出登录</Menu.Item>
       </Menu>
     );
     return currentUser && currentUser.name ? (
       <HeaderDropdown overlay={menuHeaderDropdown}>
         <span className={`${styles.action} ${styles.account}`}>
           <Avatar size="small" className={styles.avatar} src={currentUser.avatar} alt="avatar" />
-<<<<<<< HEAD
           <span className={`${styles.name} anticon`}>{currentUser.name}</span>
-=======
-          <span className={styles.name}>{currentUser.name}</span>
->>>>>>> 494123841f877198857dcd40ed10aaffa3e239be
         </span>
       </HeaderDropdown>
     ) : (
-      <span className={`${styles.action} ${styles.account}`}>
-        <Spin
-          size="small"
-          style={{
-            marginLeft: 8,
-            marginRight: 8,
-          }}
-        />
-      </span>
-    );
+        <span className={`${styles.action} ${styles.account}`}>
+          <Spin
+            size="small"
+            style={{
+              marginLeft: 8,
+              marginRight: 8,
+            }}
+          />
+        </span>
+      );
   }
 }
 
