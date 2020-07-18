@@ -1,8 +1,8 @@
 import { DefaultFooter, getMenuData, getPageTitle } from '@ant-design/pro-layout';
 import { Helmet, HelmetProvider } from 'react-helmet-async';
-import { Link, SelectLang, useIntl, connect } from 'umi';
+import { useIntl, connect } from 'umi';
+import { GithubOutlined } from '@ant-design/icons';
 import React from 'react';
-import logo from '../assets/logo.svg';
 import styles from './UserLayout.less';
 
 const UserLayout = props => {
@@ -34,22 +34,30 @@ const UserLayout = props => {
       </Helmet>
 
       <div className={styles.container}>
-        <div className={styles.lang}>
-          <SelectLang />
-        </div>
-        <div className={styles.content}>
-          <div className={styles.top}>
-            <div className={styles.header}>
-              <Link to="/">
-                <img alt="logo" className={styles.logo} src={logo} />
-                <span className={styles.title}>Ant Design</span>
-              </Link>
-            </div>
-            <div className={styles.desc}>Ant Design 是西湖区最具影响力的 Web 设计规范</div>
-          </div>
-          {children}
-        </div>
-        <DefaultFooter />
+        <div className={styles.content}>{children}</div>
+        <DefaultFooter
+          copyright={`${new Date().getFullYear()} 电子工程学院教4-217实验室`}
+          links={[
+            {
+              key: 'BUPT',
+              title: 'BUPT',
+              href: 'https://www.bupt.edu.cn/',
+              blankTarget: true,
+            },
+            {
+              key: 'github',
+              title: <GithubOutlined />,
+              href: 'https://github.com/hxhu/lab_management',
+              blankTarget: true,
+            },
+            {
+              key: 'School of Electronic Engineering',
+              title: 'School of Electronic Engineering',
+              href: 'https://see.bupt.edu.cn/',
+              blankTarget: true,
+            },
+          ]}
+        />
       </div>
     </HelmetProvider>
   );

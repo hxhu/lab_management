@@ -1,6 +1,6 @@
 import { UploadOutlined } from '@ant-design/icons';
 import { Button, Input, Select, Upload, Form, message } from 'antd';
-import { connect, FormattedMessage, formatMessage } from 'umi';
+import { connect, FormattedMessage, formatMessage, history } from 'umi';
 import React, { Component } from 'react';
 import GeographicView from './GeographicView';
 import PhoneView from './PhoneView';
@@ -86,6 +86,7 @@ class BaseView extends Component {
         id: 'userandsettings.basic.update.success',
       }),
     );
+    history.push('/')
   };
 
   render() {

@@ -11,7 +11,6 @@ import { Result, Button } from 'antd';
 import Authorized from '@/utils/Authorized';
 import RightContent from '@/components/GlobalHeader/RightContent';
 import { getAuthorityFromRouter } from '@/utils/utils';
-import logo from '../assets/logo.svg';
 
 const noMatch = (
   <Result
@@ -40,24 +39,24 @@ const menuDataRender = menuList =>
 
 const defaultFooterDom = (
   <DefaultFooter
-    copyright={`${new Date().getFullYear()} 蚂蚁金服体验技术部出品`}
+    copyright={`${new Date().getFullYear()} 电子工程学院教4-217实验室`}
     links={[
       {
-        key: 'Ant Design Pro',
-        title: 'Ant Design Pro',
-        href: 'https://pro.ant.design',
+        key: 'BUPT',
+        title: 'BUPT',
+        href: 'https://www.bupt.edu.cn/',
         blankTarget: true,
       },
       {
         key: 'github',
         title: <GithubOutlined />,
-        href: 'https://github.com/ant-design/ant-design-pro',
+        href: 'https://github.com/hxhu/lab_management',
         blankTarget: true,
       },
       {
-        key: 'Ant Design',
-        title: 'Ant Design',
-        href: 'https://ant.design',
+        key: 'School of Electronic Engineering',
+        title: 'School of Electronic Engineering',
+        href: 'https://see.bupt.edu.cn/',
         blankTarget: true,
       },
     ]}
@@ -103,7 +102,7 @@ const BasicLayout = props => {
   const { formatMessage } = useIntl();
   return (
     <ProLayout
-      logo={logo}
+      logo={null}
       formatMessage={formatMessage}
       onCollapse={handleMenuCollapse}
       onMenuHeaderClick={() => history.push('/')}
