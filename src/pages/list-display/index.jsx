@@ -1,11 +1,23 @@
 import { PlusOutlined } from '@ant-design/icons';
-import { Button, Divider, message, Input } from 'antd';
+import {
+  Button,
+  Divider,
+  message,
+  Card,
+  Space,
+  Statistic,
+  Row,
+  Col,
+} from 'antd';
 import React, { useState, useRef } from 'react';
 import { PageContainer, FooterToolbar } from '@ant-design/pro-layout';
 import ProTable from '@ant-design/pro-table';
+import moment from 'moment'
 import CreateForm from './components/CreateForm';
 import UpdateForm from './components/UpdateForm';
 import { queryRule, updateRule, addRule, removeRule } from './service';
+
+// 删除
 /**
  * 添加节点
  * @param fields
@@ -79,14 +91,8 @@ const TableList = () => {
   const [selectedRowsState, setSelectedRows] = useState([]);
   const columns = [
     {
-      title: '规则名称',
+      title: '项目名称',
       dataIndex: 'name',
-      rules: [
-        {
-          required: true,
-          message: '规则名称为必填项',
-        },
-      ],
     },
     {
       title: '描述',
@@ -94,54 +100,22 @@ const TableList = () => {
       valueType: 'textarea',
     },
     {
-      title: '服务调用次数',
-      dataIndex: 'callNo',
-      sorter: true,
-      hideInForm: true,
-      renderText: val => `${val} 万`,
+      title: '项目类型',
+      dataIndex: 'type',
     },
     {
-      title: '状态',
-      dataIndex: 'status',
-      hideInForm: true,
-      valueEnum: {
-        0: {
-          text: '关闭',
-          status: 'Default',
-        },
-        1: {
-          text: '运行中',
-          status: 'Processing',
-        },
-        2: {
-          text: '已上线',
-          status: 'Success',
-        },
-        3: {
-          text: '异常',
-          status: 'Error',
-        },
-      },
+      title: '运行设备',
+      dataIndex: 'device',
     },
     {
-      title: '上次调度时间',
-      dataIndex: 'updatedAt',
+      title: '最新结果时间',
+      dataIndex: 'last_time',
       sorter: true,
       valueType: 'dateTime',
-      hideInForm: true,
-      renderFormItem: (item, { defaultRender, ...rest }, form) => {
-        const status = form.getFieldValue('status');
-
-        if (`${status}` === '0') {
-          return false;
-        }
-
-        if (`${status}` === '3') {
-          return <Input {...rest} placeholder="请输入异常原因！" />;
-        }
-
-        return defaultRender(item);
-      },
+    },
+    {
+      title: '执行结果',
+      dataIndex: 'status',
     },
     {
       title: '操作',
@@ -163,23 +137,47 @@ const TableList = () => {
       ),
     },
   ];
+
   return (
     <PageContainer>
-      <ProTable
-        headerTitle="查询表格"
-        actionRef={actionRef}
-        rowKey="key"
-        toolBarRender={() => [
-          <Button type="primary" onClick={() => handleModalVisible(true)}>
-            <PlusOutlined /> 新建
+      <Space direction="vertical" style={{ width: "100%" }}>
+        <Card>
+          <Row gutter={16}>
+            <Col span={8}>
+              <Statistic title="项目数量" value={10} />
+            </Col>
+            <Col span={8}>
+              <Statistic title="最近执行项目" value={"拥挤度检测"} />
+            </Col>
+            <Col span={8}>
+              <Statistic title="最近执行时间" value={moment().format('YYYY-MM-DD HH:mm:ss')} />
+            </Col>
+          </Row>
+        </Card>
+
+
+        <ProTable
+          headerTitle="实验结果"
+          actionRef={actionRef}
+          rowKey="key"
+          toolBarRender={() => [
+            <Button type="primary" onClick={() => handleModalVisible(true)}>
+              <PlusOutlined /> 新建
           </Button>,
-        ]}
-        request={(params, sorter, filter) => queryRule({ ...params, sorter, filter })}
-        columns={columns}
-        rowSelection={{
-          onChange: (_, selectedRows) => setSelectedRows(selectedRows),
-        }}
-      />
+          ]}
+          request={(params, sorter, filter) => queryRule({ ...params, sorter, filter }).then(rst => {
+            console.log(rst) // 请求数据格式
+            return rst
+          })}
+          columns={columns}
+          rowSelection={{
+            onChange: (_, selectedRows) => setSelectedRows(selectedRows),
+          }}
+        />
+
+      </Space>
+
+      {/* 批量操作（修改） */}
       {selectedRowsState?.length > 0 && (
         <FooterToolbar
           extra={
@@ -211,6 +209,8 @@ const TableList = () => {
           <Button type="primary">批量审批</Button>
         </FooterToolbar>
       )}
+
+      {/* 创建数据（删） */}
       <CreateForm onCancel={() => handleModalVisible(false)} modalVisible={createModalVisible}>
         <ProTable
           onSubmit={async value => {
@@ -230,6 +230,8 @@ const TableList = () => {
           rowSelection={{}}
         />
       </CreateForm>
+
+      {/* 编辑数据（删） */}
       {stepFormValues && Object.keys(stepFormValues).length ? (
         <UpdateForm
           onSubmit={async value => {
@@ -252,6 +254,7 @@ const TableList = () => {
           values={stepFormValues}
         />
       ) : null}
+
     </PageContainer>
   );
 };

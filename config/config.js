@@ -92,7 +92,7 @@ export default defineConfig({
             },
             {
               name: '图表展示',
-              icon: 'fund', 
+              icon: 'fund',
               path: '/figure-display',
               component: './figure-display',
             },
@@ -117,22 +117,6 @@ export default defineConfig({
             {
               component: './404',
             },
-            // {
-            //   path: '/admin',
-            //   name: 'admin',
-            //   icon: 'crown',
-            //   component: './Admin',
-            //   authority: ['admin'],
-            //   routes: [
-            //     {
-            //       path: '/admin/sub-page',
-            //       name: 'sub-page',
-            //       icon: 'smile',
-            //       component: './Welcome',
-            //       authority: ['admin'],
-            //     },
-            //   ],
-            // },
           ],
         },
         {
