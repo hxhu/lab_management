@@ -1,25 +1,21 @@
 import { PlusOutlined } from '@ant-design/icons';
 import {
   Button,
-  Descriptions,
+  Divider,
   message,
   Card,
   Space,
   Statistic,
   Row,
   Col,
-  Form,
-  Select
 } from 'antd';
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { PageContainer, FooterToolbar } from '@ant-design/pro-layout';
 import ProTable from '@ant-design/pro-table';
-import moment from 'moment'
 import CreateForm from './components/CreateForm';
 import UpdateForm from './components/UpdateForm';
+import CreateCom from './components/CreateCom';
 import { queryRule, updateRule, addRule, removeRule } from './service';
-
-const { Option } = Select;
 
 // 删除
 /**
@@ -87,101 +83,98 @@ const handleRemove = async selectedRows => {
   }
 };
 
-const TableList = () => {
+const Manager = () => {
   const [createModalVisible, handleModalVisible] = useState(false);
   const [updateModalVisible, handleUpdateModalVisible] = useState(false);
-  const [projectOptions, setProjectOptionse] = useState([]);
+  const [createComVisible, setCreateComVisible] = useState(false); 
   const [stepFormValues, setStepFormValues] = useState({});
   const actionRef = useRef();
   const [selectedRowsState, setSelectedRows] = useState([]);
   const columns = [
     {
-      title: '数据名称',
+      title: '设备名称',
       dataIndex: 'name',
     },
     {
-      title: '运行设备',
-      dataIndex: 'device',
+      title: '描述',
+      dataIndex: 'desc',
+      valueType: 'textarea',
     },
     {
-      title: '获取时间',
+      title: '设备类型',
+      dataIndex: 'type',
+    },
+    {
+      title: 'IP',
+      dataIndex: 'ip',
+    },
+    {
+      title: '注册时间',
       dataIndex: 'last_time',
       sorter: true,
       valueType: 'dateTime',
     },
     {
-      title: '结果',
-      dataIndex: 'value',
+      title: '状态',
+      dataIndex: 'status',
+    },
+    {
+      title: '自动收集数据',
+      dataIndex: 'status',
+    },
+    {
+      title: '操作',
+      dataIndex: 'option',
+      valueType: 'option',
+      render: (_, record) => (
+        <>
+          <a
+            onClick={() => {
+              handleUpdateModalVisible(true);
+              setStepFormValues(record);
+            }}
+          >
+            修改
+          </a>
+          <Divider type="vertical" />
+          <a href="">删除</a>
+          <Divider type="vertical" />
+          <a href="">图表配置</a>
+        </>
+      ),
     },
   ];
 
-  useEffect(() => {
-    const tmp = [
-      <Option value="nano">nano</Option>,
-      <Option value="firefly">firefly</Option>,
-      <Option value="nvidia">nvidia</Option>
-    ]
-    setProjectOptionse(tmp)
-  }, []);
+  const closeCreateCom = () => {
+    setCreateComVisible(false)
+  }
 
   return (
     <PageContainer>
       <Space direction="vertical" style={{ width: "100%" }}>
-        {/* 项目选择 */}
-        <Card>
-          <Row>
-            <Col span={8}>
-              <Form>
-                <Form.Item
-                  label="选择项目"
-                  name="name"
-                  rules={[{ required: true, message: '请选择项目!' }]}
-                >
-                  <Select>
-                    {projectOptions}
-                  </Select>
-                </Form.Item>
-              </Form>
-            </Col>
-            <Col span={16} />
-          </Row>
-        </Card>
-
-        {/* 项目信息 */}
-        <Card>
-          <Descriptions title="设备详情" bordered>
-            <Descriptions.Item label="名称">Zhou Maomao</Descriptions.Item>
-            <Descriptions.Item label="类型">1810000000</Descriptions.Item>
-            <Descriptions.Item label="描述">Hangzhou, Zhejiang</Descriptions.Item>
-            <Descriptions.Item label="运行设备">empty</Descriptions.Item>
-            <Descriptions.Item label="最新结果时间">Zhou Maomao</Descriptions.Item>
-          </Descriptions>
-        </Card>
-
-        {/* 结果概述 */}
         <Card>
           <Row gutter={16}>
             <Col span={8}>
-              <Statistic title="结果数" value={10} />
+              <Statistic title="总设备数" value={10} />
             </Col>
             <Col span={8}>
-              <Statistic title="最近结果" value={5.27} />
+              <Statistic title="在线数" value={5} /> {/* 设备正常 */}
             </Col>
             <Col span={8}>
-              <Statistic title="最近结果时间" value={moment().format('YYYY-MM-DD HH:mm:ss')} />
+              <Statistic title="活跃数" value={2} /> {/* 业务正常 */}
             </Col>
           </Row>
         </Card>
 
-        {/* 结果列表 */}
+        {/* 设备列表 */}
         <ProTable
-          headerTitle={<strong>结果列表</strong>}
+          headerTitle={<strong>设备列表</strong>}
           actionRef={actionRef}
           rowKey="key"
           toolBarRender={() => [
-            <Button type="primary" onClick={() => handleModalVisible(true)}>
+            <Button type="primary" onClick={() => setCreateComVisible(true)}>
               <PlusOutlined /> 新建
-          </Button>,
+            </Button>,
           ]}
           request={(params, sorter, filter) => queryRule({ ...params, sorter, filter }).then(rst => {
             console.log(rst) // 请求数据格式
@@ -194,6 +187,15 @@ const TableList = () => {
         />
 
       </Space>
+
+      {/* 新建节点 */}
+      {
+        createComVisible 
+        ? <CreateCom visible={createComVisible} onClose={() => closeCreateCom()}/>
+        : null
+      }
+      
+
 
       {/* 批量操作（修改） */}
       {selectedRowsState?.length > 0 && (
@@ -277,4 +279,4 @@ const TableList = () => {
   );
 };
 
-export default TableList;
+export default Manager;

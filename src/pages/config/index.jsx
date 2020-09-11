@@ -10,8 +10,9 @@ import {
   Input,
   Divider
 } from 'antd';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { get } from 'lodash'
+import ProTable from '@ant-design/pro-table';
 import { Line, Column, Pie, Gauge, Liquid, Scatter } from '@ant-design/charts';
 import ReactJson from 'react-json-view'
 import { PageContainer } from '@ant-design/pro-layout';
@@ -421,16 +422,50 @@ const dataModel = {
   cover: false // 是否覆盖原数据
 }
 
+const columns = [
+  {
+    title: '图表名称',
+    dataIndex: 'name',
+  },
+  {
+    title: '描述',
+    dataIndex: 'desc',
+    valueType: 'textarea',
+  },
+  {
+    title: '类型',
+    dataIndex: 'type',
+  },
+  {
+    title: '发送格式',
+    dataIndex: 'config',
+  },
+  {
+    title: '操作',
+    dataIndex: 'option',
+    valueType: 'option',
+    render: (_, record) => (
+      <>
+        <a href="">修改</a>
+        <Divider type="vertical" />
+        <a href="">删除</a>
+        <Divider type="vertical" />
+        <a href="">图表配置</a>
+      </>
+    ),
+  },
+];
 
 const ProjectCom = () => {
   const [projectOptions, setProjectOptionse] = useState([]);
   const [data, setData] = useState([]);
+  const actionRef = useRef();
 
   useEffect(() => {
     const tmp = [
-      <Option value="拥挤度检测">拥挤度检测</Option>,
-      <Option value="边坡检测">边坡检测</Option>,
-      <Option value="菜品识别">菜品识别</Option>
+      <Option value="nano">nano</Option>,
+      <Option value="firefly">firefly</Option>,
+      <Option value="nvidia">nvidia</Option>
     ]
     setProjectOptionse(tmp)
   }, []);
@@ -449,9 +484,9 @@ const ProjectCom = () => {
             <Col span={8}>
               <Form>
                 <Form.Item
-                  label="选择项目"
+                  label="选择设备"
                   name="name"
-                  rules={[{ required: true, message: '请选择项目!' }]}
+                  rules={[{ required: true, message: '请选择设备!' }]}
                 >
                   <Select>
                     {projectOptions}
@@ -463,21 +498,41 @@ const ProjectCom = () => {
           </Row>
         </Card>
 
-        {/* 项目信息 */}
+        {/* 设备信息 */}
         <Card>
-          <Descriptions title="项目详情" bordered>
+          <Descriptions title="设备详情" bordered>
             <Descriptions.Item label="名称">Zhou Maomao</Descriptions.Item>
             <Descriptions.Item label="类型">1810000000</Descriptions.Item>
-            <Descriptions.Item label="描述">Hangzhou, Zhejiang</Descriptions.Item>
-            <Descriptions.Item label="运行设备">empty</Descriptions.Item>
-            <Descriptions.Item label="最新结果时间">Zhou Maomao</Descriptions.Item>
+            <Descriptions.Item label="ip">Hangzhou, Zhejiang</Descriptions.Item>
+            <Descriptions.Item label="状态">empty</Descriptions.Item>
+            <Descriptions.Item label="自动收集数据">Zhou Maomao</Descriptions.Item>
           </Descriptions>
         </Card>
+    
+        {/* 设备列表 */}
+        <ProTable
+          headerTitle={<strong>设备管理</strong>}
+          actionRef={actionRef}
+          rowKey="key"
+          // toolBarRender={() => [
+          //   <Button type="primary" onClick={() => setCreateComVisible(true)}>
+          //     <PlusOutlined /> 新建
+          //   </Button>,
+          // ]}
+          // request={(params, sorter, filter) => queryRule({ ...params, sorter, filter }).then(rst => {
+          //   console.log(rst) // 请求数据格式
+          //   return rst
+          // })}
+          columns={columns}
+          // rowSelection={{
+          //   onChange: (_, selectedRows) => setSelectedRows(selectedRows),
+          // }}
+        />
 
         {/* 选择图表类型 */}
         <Card>
           <Space direction="vertical" style={{ width: "100%" }}>
-            <Descriptions title="结果视频" bordered>
+            <Descriptions title="新增图表" bordered>
               <Descriptions.Item label="描述">结果描述</Descriptions.Item>
             </Descriptions>
 

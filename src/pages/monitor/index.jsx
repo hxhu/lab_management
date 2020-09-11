@@ -41,9 +41,9 @@ const MapDisplay = () => {
             <Col span={8}>
               <Form>
                 <Form.Item
-                  label="选择项目"
+                  label="选择设备"
                   name="name"
-                  rules={[{ required: true, message: '请选择项目!' }]}
+                  rules={[{ required: true, message: '请选择设备!' }]}
                 >
                   <Select>
                     {projectOptions}
@@ -60,17 +60,16 @@ const MapDisplay = () => {
           <Descriptions title="设备详情" bordered>
             <Descriptions.Item label="名称">Zhou Maomao</Descriptions.Item>
             <Descriptions.Item label="类型">1810000000</Descriptions.Item>
-            <Descriptions.Item label="描述">Hangzhou, Zhejiang</Descriptions.Item>
-            <Descriptions.Item label="运行设备">empty</Descriptions.Item>
-            <Descriptions.Item label="最新结果时间">Zhou Maomao</Descriptions.Item>
+            <Descriptions.Item label="ip">Hangzhou, Zhejiang</Descriptions.Item>
+            <Descriptions.Item label="状态">empty</Descriptions.Item>
+            <Descriptions.Item label="自动收集数据">Zhou Maomao</Descriptions.Item>
           </Descriptions>
         </Card>
 
         {/* 地图展示 */}
+        {/* 地图中显示 设备所在点 在线？ 运行？ 位置（经纬度） */}
         <Card>
-          <Descriptions title="结果地图" bordered>
-            <Descriptions.Item label="描述">结果描述</Descriptions.Item>
-          </Descriptions>
+          <Descriptions title="监控信息" bordered />  
           <Card hoverable bordered>
             <Row>
               <Col span={2} />

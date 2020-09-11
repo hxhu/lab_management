@@ -79,10 +79,22 @@ export default defineConfig({
               component: './Welcome',
             },
             {
-              name: '项目管理',
-              icon: 'snippets',
-              path: '/project',
-              component: './project',
+              name: '设备管理',
+              icon: 'cluster',
+              path: '/manager',
+              component: './manager',
+            },
+            {
+              name: '结果显示配置',
+              icon: 'tool',
+              path: '/config',
+              component: './config',
+            },
+            {
+              name: '设备监控',
+              icon: 'dashboard',
+              path: '/monitor',
+              component: './monitor',
             },
             {
               name: '列表展示',

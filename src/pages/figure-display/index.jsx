@@ -23,9 +23,9 @@ const FigureDisplay = () => {
 
   useEffect(() => {
     const tmp = [
-      <Option value="拥挤度检测">拥挤度检测</Option>,
-      <Option value="边坡检测">边坡检测</Option>,
-      <Option value="菜品识别">菜品识别</Option>
+      <Option value="nano">nano</Option>,
+      <Option value="firefly">firefly</Option>,
+      <Option value="nvidia">nvidia</Option>
     ]
     setProjectOptionse(tmp)
   }, []);
@@ -429,9 +429,9 @@ const FigureDisplay = () => {
             <Col span={8}>
               <Form>
                 <Form.Item
-                  label="选择项目"
+                  label="选择设备"
                   name="name"
-                  rules={[{ required: true, message: '请选择项目!' }]}
+                  rules={[{ required: true, message: '请选择设备!' }]}
                 >
                   <Select>
                     {projectOptions}
@@ -443,19 +443,20 @@ const FigureDisplay = () => {
           </Row>
         </Card>
 
-        {/* 项目信息 */}
+        {/* 设备信息 */}
         <Card>
-          <Descriptions title="项目详情" bordered>
+          <Descriptions title="设备详情" bordered>
             <Descriptions.Item label="名称">Zhou Maomao</Descriptions.Item>
             <Descriptions.Item label="类型">1810000000</Descriptions.Item>
-            <Descriptions.Item label="描述">Hangzhou, Zhejiang</Descriptions.Item>
-            <Descriptions.Item label="运行设备">empty</Descriptions.Item>
-            <Descriptions.Item label="最新结果时间">Zhou Maomao</Descriptions.Item>
+            <Descriptions.Item label="ip">Hangzhou, Zhejiang</Descriptions.Item>
+            <Descriptions.Item label="状态">empty</Descriptions.Item>
+            <Descriptions.Item label="自动收集数据">Zhou Maomao</Descriptions.Item>
           </Descriptions>
         </Card>
 
-        {/* 图标展示 */}
+        {/* 图表展示 */}
         <Card>
+          <Descriptions title="结果图表" bordered />
           {
             configs.length !== 0
               ? <Row gutter={[16, 8]}>

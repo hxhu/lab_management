@@ -22,9 +22,9 @@ const VideoDisplay = () => {
 
   useEffect(() => {
     const tmp = [
-      <Option value="拥挤度检测">拥挤度检测</Option>,
-      <Option value="边坡检测">边坡检测</Option>,
-      <Option value="菜品识别">菜品识别</Option>
+      <Option value="nano">nano</Option>,
+      <Option value="firefly">firefly</Option>,
+      <Option value="nvidia">nvidia</Option>
     ]
     setProjectOptionse(tmp)
   }, []);
@@ -60,7 +60,7 @@ const VideoDisplay = () => {
 
         {/* 项目信息 */}
         <Card>
-          <Descriptions title="项目详情" bordered>
+          <Descriptions title="设备详情" bordered>
             <Descriptions.Item label="名称">Zhou Maomao</Descriptions.Item>
             <Descriptions.Item label="类型">1810000000</Descriptions.Item>
             <Descriptions.Item label="描述">Hangzhou, Zhejiang</Descriptions.Item>
