@@ -148,7 +148,15 @@ export default defineConfig({
   // @ts-ignore
   title: false,
   ignoreMomentLocale: true,
-  proxy: proxy[REACT_APP_ENV || 'dev'],
+  proxy:{
+    '/api/': {
+      // target: 'https://preview.pro.ant.design',
+      target: 'http://127.0.0.1:18800/dlplatform',
+      changeOrigin: true,
+      pathRewrite: { '^/api': '' },
+    },
+  },
+  // proxy: proxy[REACT_APP_ENV || 'dev'],
   manifest: {
     basePath: '/',
   },

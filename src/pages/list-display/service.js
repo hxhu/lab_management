@@ -1,9 +1,10 @@
 import request from '@/utils/request';
 
-export async function queryRule(params) {
-  return request('/api/rule', {
-    params,
-  });
+export async function queryDeviceListByUserId(params) {
+  return request('/api/device/getListByUserId', {
+    method: 'GET',
+    params
+  })
 }
 export async function removeRule(params) {
   return request('/api/rule', {

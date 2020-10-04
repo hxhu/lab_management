@@ -9,15 +9,18 @@ import {
   Row,
   Col,
   Form,
-  Select
+  Select,
+  Badge,
+  Tag
 } from 'antd';
 import React, { useState, useRef, useEffect } from 'react';
 import { PageContainer, FooterToolbar } from '@ant-design/pro-layout';
 import ProTable from '@ant-design/pro-table';
+import { cloneDeep, get, set } from 'lodash'
 import moment from 'moment'
 import CreateForm from './components/CreateForm';
 import UpdateForm from './components/UpdateForm';
-import { queryRule, updateRule, addRule, removeRule } from './service';
+import { queryDeviceListByUserId, updateRule, addRule, removeRule } from './service';
 
 const { Option } = Select;
 
@@ -68,7 +71,6 @@ const handleUpdate = async fields => {
  *  删除节点
  * @param selectedRows
  */
-
 const handleRemove = async selectedRows => {
   const hide = message.loading('正在删除');
   if (!selectedRows) return true;
@@ -90,10 +92,12 @@ const handleRemove = async selectedRows => {
 const TableList = () => {
   const [createModalVisible, handleModalVisible] = useState(false);
   const [updateModalVisible, handleUpdateModalVisible] = useState(false);
-  const [projectOptions, setProjectOptionse] = useState([]);
+  const [projectOptions, setProjectOptions] = useState([]);
   const [stepFormValues, setStepFormValues] = useState({});
   const actionRef = useRef();
   const [selectedRowsState, setSelectedRows] = useState([]);
+  const [deviceList, setDeviceList] = useState([]);
+  const [deviceDetail, setDeviceDetail] = useState({});
   const columns = [
     {
       title: '数据名称',
@@ -115,13 +119,57 @@ const TableList = () => {
     },
   ];
 
-  useEffect(() => {
-    const tmp = [
-      <Option value="nano">nano</Option>,
-      <Option value="firefly">firefly</Option>,
-      <Option value="nvidia">nvidia</Option>
-    ]
-    setProjectOptionse(tmp)
+  const onValuesChange = (changedValues) => {
+    let tmp = null;
+    deviceList.forEach(v => {
+      if (v.id === changedValues.name) {
+        tmp = cloneDeep(v)
+      }
+    })
+    // 类型
+    switch( tmp.type ){
+      case "sensor":   set(tmp, 'type',  '传感器'); break;
+      case "embedded": set(tmp, 'type',  '嵌入式'); break;
+      case "server":   set(tmp, 'type',  '服务器'); break;
+      default:         set(tmp, 'type',  '未知');   break;
+    }
+
+    // 运行状态
+    switch( tmp.status ){
+      case 0:   set(tmp, 'status',  '离线'); set(tmp, 'statusFlag', 'error');      break;
+      case 1:   set(tmp, 'status',  '在线'); set(tmp, 'statusFlag', 'processing'); break;
+      case 2:   set(tmp, 'status',  '运行'); set(tmp, 'statusFlag', 'success');    break;
+      default:  set(tmp, 'status',  '未知'); set(tmp, 'statusFlag', 'error');      break;
+    }
+
+    // 自动收集数据
+    switch( tmp.collectFlag ){
+      case true:   set(tmp, 'collect',  '是'); set(tmp, 'collectFlag', 'success');    break;
+      case false:  set(tmp, 'collect',  '否'); set(tmp, 'collectFlag', 'error');      break;
+      default:     set(tmp, 'collect',  '否'); set(tmp, 'collectFlag', 'error');      break;
+    }
+
+    setDeviceDetail(tmp)
+    
+  }
+
+  const getDeviceListByUserId = async userId => {
+    try {
+      return await queryDeviceListByUserId({
+        'userId': userId
+      }).then(rst => rst.data)
+    } catch (error) {
+      message.error('设备请求出错');
+    }
+  }
+
+  useEffect(async () => {
+    const data = await getDeviceListByUserId('hu')
+    setDeviceList(data)
+
+    const tmp = []
+    data.forEach(v => tmp.push(<Option value={v.id}>{v.name}</Option>))
+    setProjectOptions(tmp)
   }, []);
 
   return (
@@ -131,11 +179,11 @@ const TableList = () => {
         <Card>
           <Row>
             <Col span={8}>
-              <Form>
+              <Form onValuesChange={onValuesChange}>
                 <Form.Item
-                  label="选择项目"
+                  label="选择设备"
                   name="name"
-                  rules={[{ required: true, message: '请选择项目!' }]}
+                  rules={[{ required: true, message: '请选择设备!' }]}
                 >
                   <Select>
                     {projectOptions}
@@ -150,11 +198,11 @@ const TableList = () => {
         {/* 项目信息 */}
         <Card>
           <Descriptions title="设备详情" bordered>
-            <Descriptions.Item label="名称">Zhou Maomao</Descriptions.Item>
-            <Descriptions.Item label="类型">1810000000</Descriptions.Item>
-            <Descriptions.Item label="描述">Hangzhou, Zhejiang</Descriptions.Item>
-            <Descriptions.Item label="运行设备">empty</Descriptions.Item>
-            <Descriptions.Item label="最新结果时间">Zhou Maomao</Descriptions.Item>
+            <Descriptions.Item label="名称">{get(deviceDetail, 'name', null)}</Descriptions.Item>
+            <Descriptions.Item label="类型">{get(deviceDetail, 'type', null)}</Descriptions.Item>
+            <Descriptions.Item label="描述">{get(deviceDetail, 'desc', null)}</Descriptions.Item>
+            <Descriptions.Item label="展示配置数">{get(deviceDetail, 'displayIds', []).length}</Descriptions.Item>
+            <Descriptions.Item label="注册时间">{moment(get(deviceDetail, 'registerTime', 0)).format('YYYY-MM-DD HH:mm:ss')}</Descriptions.Item>
           </Descriptions>
         </Card>
 
@@ -162,10 +210,10 @@ const TableList = () => {
         <Card>
           <Row gutter={16}>
             <Col span={8}>
-              <Statistic title="结果数" value={10} />
+              <Statistic title="运行状态"  formatter={() => <Badge status={get(deviceDetail, 'statusFlag', 'error')} text={get(deviceDetail, 'status', '离线')} />} />
             </Col>
             <Col span={8}>
-              <Statistic title="最近结果" value={5.27} />
+              <Statistic title="自动收集数据" formatter={() => <Badge status={get(deviceDetail, 'collectFlag', 'error')} text={get(deviceDetail, 'collect', '否')} />} />
             </Col>
             <Col span={8}>
               <Statistic title="最近结果时间" value={moment().format('YYYY-MM-DD HH:mm:ss')} />
