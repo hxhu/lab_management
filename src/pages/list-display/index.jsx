@@ -99,6 +99,7 @@ const TableList = () => {
   const [deviceList, setDeviceList] = useState([]);
   const [deviceDetail, setDeviceDetail] = useState({});
   const [dataList, setDataList] = useState([]);
+  const [lastTime, setLastTime] = useState(0);
   const columns = [
     {
       title: '数据名称',
@@ -116,7 +117,7 @@ const TableList = () => {
           case 'video':     result="视频"; break;
           case 'map':       result="地图"; break;
           case 'heartbeat': result="心跳"; break;
-          defalut:          result="未知"; break;
+          default:          result="未知"; break;
         }
         return result
       }
@@ -207,11 +208,14 @@ const TableList = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      await getDeviceListByUserId('hu')
+      let last = 0;
       if (has(deviceDetail, 'id')) {
-        const dataList = await getDataListByDeviceId(get(deviceDetail, 'id'))
-        console.log(dataList)
-        setDataList(dataList)
+        const tmp = await getDataListByDeviceId(get(deviceDetail, 'id'))
+        tmp.forEach( v => {
+          last = (last < v.lastTimestamp) ? v.lastTimestamp : last;
+        })
+        setLastTime(last)
+        setDataList(tmp)
       }
     }
 
@@ -262,7 +266,7 @@ const TableList = () => {
               <Statistic title="自动收集数据" formatter={() => <Badge status={get(deviceDetail, 'collectFlag', 'error')} text={get(deviceDetail, 'collect', '否')} />} />
             </Col>
             <Col span={8}>
-              <Statistic title="最近结果时间" value={moment().format('YYYY-MM-DD HH:mm:ss')} />
+              <Statistic title="最近结果时间" value={moment(lastTime).format('YYYY-MM-DD HH:mm:ss')} />
             </Col>
           </Row>
         </Card>

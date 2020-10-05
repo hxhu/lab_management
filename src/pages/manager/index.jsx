@@ -9,13 +9,14 @@ import {
   Row,
   Col,
 } from 'antd';
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { set, get } from 'lodash';
 import { PageContainer, FooterToolbar } from '@ant-design/pro-layout';
 import ProTable from '@ant-design/pro-table';
 import CreateForm from './components/CreateForm';
 import UpdateForm from './components/UpdateForm';
 import CreateCom from './components/CreateCom';
-import { queryRule, updateRule, addRule, removeRule } from './service';
+import { queryDeviceListByUserId, queryRule, updateRule, addRule, removeRule } from './service';
 
 // 删除
 /**
@@ -86,10 +87,13 @@ const handleRemove = async selectedRows => {
 const Manager = () => {
   const [createModalVisible, handleModalVisible] = useState(false);
   const [updateModalVisible, handleUpdateModalVisible] = useState(false);
-  const [createComVisible, setCreateComVisible] = useState(false); 
+  const [createComVisible, setCreateComVisible] = useState(false);
   const [stepFormValues, setStepFormValues] = useState({});
   const actionRef = useRef();
   const [selectedRowsState, setSelectedRows] = useState([]);
+  const [deviceList, setDeviceList] = useState([]);
+  const [deviceDetail, setDeviceDetail] = useState({});
+
   const columns = [
     {
       title: '设备名称',
@@ -103,6 +107,16 @@ const Manager = () => {
     {
       title: '设备类型',
       dataIndex: 'type',
+      render: type => {
+        let result = null
+        switch (type) {
+          case "sensor": result = '传感器'; break;
+          case "embedded": result = '嵌入式'; break;
+          case "server": result = '服务器'; break;
+          default: result = '未知'; break;
+        }
+        return result
+      }
     },
     {
       title: 'IP',
@@ -110,17 +124,36 @@ const Manager = () => {
     },
     {
       title: '注册时间',
-      dataIndex: 'last_time',
+      dataIndex: 'registerTime',
       sorter: true,
       valueType: 'dateTime',
     },
     {
       title: '状态',
       dataIndex: 'status',
+      render: status => {
+        let result = null
+        switch (status) {
+          case 0: result = '离线'; break;
+          case 1: result = '在线'; break;
+          case 2: result = '运行'; break;
+          default: result = '未知'; break;
+        }
+        return result
+      }
     },
     {
       title: '自动收集数据',
       dataIndex: 'status',
+      render: collectFlag => {
+        let result = null
+        switch (collectFlag) {
+          case true:  result = '是'; break;
+          case false: result = '否'; break;
+          default:    result = '否'; break;
+        }
+        return result
+      }
     },
     {
       title: '操作',
@@ -145,9 +178,50 @@ const Manager = () => {
     },
   ];
 
+  // 跟据userId获取设备列表
+  const getDeviceListByUserId = async userId => {
+    try {
+      return await queryDeviceListByUserId({
+        'userId': userId
+      }).then(rst => rst.data)
+    } catch (error) {
+      message.error('设备请求出错');
+    }
+  }
+
   const closeCreateCom = () => {
     setCreateComVisible(false)
   }
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const data = await getDeviceListByUserId('hu')
+      const detail = {}
+      // 总设备数
+      set(detail, 'length', data.length)
+      // 在线数
+      let online = 0
+      data.forEach(v => {
+        if (v.status === 1 || v.status === 2) {
+          online += 1
+        }
+      })
+      set(detail, 'online', online)
+      // 活跃数
+      let active = 0
+      data.forEach(v => {
+        if (v.status === 2) {
+          active += 1
+        }
+      })
+      set(detail, 'active', active)
+
+      setDeviceList(data)
+      setDeviceDetail(detail)
+    }
+
+    fetchData()
+  }, []);
 
   return (
     <PageContainer>
@@ -155,13 +229,13 @@ const Manager = () => {
         <Card>
           <Row gutter={16}>
             <Col span={8}>
-              <Statistic title="总设备数" value={10} />
+              <Statistic title="总设备数" value={get(deviceDetail, 'length', 0)} />
             </Col>
             <Col span={8}>
-              <Statistic title="在线数" value={5} /> {/* 设备正常 */}
+              <Statistic title="在线数" value={get(deviceDetail, 'online', 0)} /> {/* 设备正常 */}
             </Col>
             <Col span={8}>
-              <Statistic title="活跃数" value={2} /> {/* 业务正常 */}
+              <Statistic title="活跃数" value={get(deviceDetail, 'active', 0)} /> {/* 业务正常 */}
             </Col>
           </Row>
         </Card>
@@ -176,10 +250,11 @@ const Manager = () => {
               <PlusOutlined /> 新建
             </Button>,
           ]}
-          request={(params, sorter, filter) => queryRule({ ...params, sorter, filter }).then(rst => {
-            console.log(rst) // 请求数据格式
-            return rst
-          })}
+          dataSource={deviceList}
+          // request={(params, sorter, filter) => queryRule({ ...params, sorter, filter }).then(rst => {
+          //   console.log(rst) // 请求数据格式
+          //   return rst
+          // })}
           columns={columns}
           rowSelection={{
             onChange: (_, selectedRows) => setSelectedRows(selectedRows),
@@ -190,11 +265,11 @@ const Manager = () => {
 
       {/* 新建节点 */}
       {
-        createComVisible 
-        ? <CreateCom visible={createComVisible} onClose={() => closeCreateCom()}/>
-        : null
+        createComVisible
+          ? <CreateCom visible={createComVisible} onClose={() => closeCreateCom()} />
+          : null
       }
-      
+
 
 
       {/* 批量操作（修改） */}

@@ -7,25 +7,79 @@ import {
   Space,
   Card,
   Select,
-  Image
+  Image,
+  message
 } from 'antd';
 import React, { useState, useRef, useEffect } from 'react';
-import { get } from 'lodash'
+import { get, cloneDeep, set } from 'lodash'
 import { PageContainer, FooterToolbar } from '@ant-design/pro-layout';
+import moment from 'moment';
+import { queryDeviceListByUserId } from './service';
 
 const { Option } = Select;
 
 const PictureDisplay = () => {
-  const [projectOptions, setProjectOptionse] = useState([]);
+  const [projectOptions, setProjectOptions] = useState([]);
   const [data, setData] = useState([]);
+  const [deviceList, setDeviceList] = useState([]);
+  const [deviceDetail, setDeviceDetail] = useState({});
+
+  const onValuesChange = (changedValues) => {
+    let tmp = null;
+    deviceList.forEach(v => {
+      if (v.id === changedValues.name) {
+        tmp = cloneDeep(v)
+      }
+    })
+    // 类型
+    switch (tmp.type) {
+      case "sensor": set(tmp, 'type', '传感器'); break;
+      case "embedded": set(tmp, 'type', '嵌入式'); break;
+      case "server": set(tmp, 'type', '服务器'); break;
+      default: set(tmp, 'type', '未知'); break;
+    }
+
+    // 运行状态
+    switch (tmp.status) {
+      case 0: set(tmp, 'status', '离线'); set(tmp, 'statusFlag', 'error'); break;
+      case 1: set(tmp, 'status', '在线'); set(tmp, 'statusFlag', 'processing'); break;
+      case 2: set(tmp, 'status', '运行'); set(tmp, 'statusFlag', 'success'); break;
+      default: set(tmp, 'status', '未知'); set(tmp, 'statusFlag', 'error'); break;
+    }
+
+    // 自动收集数据
+    switch (tmp.collectFlag) {
+      case true: set(tmp, 'collect', '是'); set(tmp, 'collectFlag', 'success'); break;
+      case false: set(tmp, 'collect', '否'); set(tmp, 'collectFlag', 'error'); break;
+      default: set(tmp, 'collect', '否'); set(tmp, 'collectFlag', 'error'); break;
+    }
+
+    setDeviceDetail(tmp)
+
+  }
+
+  // 跟据userId获取设备列表
+  const getDeviceListByUserId = async userId => {
+    try {
+      return await queryDeviceListByUserId({
+        'userId': userId
+      }).then(rst => rst.data)
+    } catch (error) {
+      message.error('设备请求出错');
+    }
+  }
 
   useEffect(() => {
-    const tmp = [
-      <Option value="nano">nano</Option>,
-      <Option value="firefly">firefly</Option>,
-      <Option value="nvidia">nvidia</Option>
-    ]
-    setProjectOptionse(tmp)
+    const fetchData = async () => {
+      const dataTmp = await getDeviceListByUserId('hu')
+      setDeviceList(dataTmp)
+
+      const tmp = []
+      dataTmp.forEach(v => tmp.push(<Option value={v.id}>{v.name}</Option>))
+      setProjectOptions(tmp)
+    }
+
+    fetchData()
   }, []);
 
   useEffect(() => {
@@ -41,9 +95,9 @@ const PictureDisplay = () => {
         <Card>
           <Row>
             <Col span={8}>
-              <Form>
+              <Form onValuesChange={onValuesChange}>
                 <Form.Item
-                  label="选择项目"
+                  label="选择设备"
                   name="name"
                   rules={[{ required: true, message: '请选择项目!' }]}
                 >
@@ -57,14 +111,14 @@ const PictureDisplay = () => {
           </Row>
         </Card>
 
-        {/* 项目信息 */}
+        {/* 设备信息 */}
         <Card>
           <Descriptions title="设备详情" bordered>
-            <Descriptions.Item label="名称">Zhou Maomao</Descriptions.Item>
-            <Descriptions.Item label="类型">1810000000</Descriptions.Item>
-            <Descriptions.Item label="描述">Hangzhou, Zhejiang</Descriptions.Item>
-            <Descriptions.Item label="运行设备">empty</Descriptions.Item>
-            <Descriptions.Item label="最新结果时间">Zhou Maomao</Descriptions.Item>
+            <Descriptions.Item label="名称">{get(deviceDetail, 'name', null)}</Descriptions.Item>
+            <Descriptions.Item label="类型">{get(deviceDetail, 'type', null)}</Descriptions.Item>
+            <Descriptions.Item label="描述">{get(deviceDetail, 'desc', null)}</Descriptions.Item>
+            <Descriptions.Item label="展示配置数">{get(deviceDetail, 'displayIds', []).length}</Descriptions.Item>
+            <Descriptions.Item label="注册时间">{moment(get(deviceDetail, 'registerTime', 0)).format('YYYY-MM-DD HH:mm:ss')}</Descriptions.Item>
           </Descriptions>
         </Card>
 
