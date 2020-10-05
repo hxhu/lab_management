@@ -6,6 +6,15 @@ export async function queryDeviceListByUserId(params) {
     params
   })
 }
+
+export async function queryDataListByDeviceId(params){
+  return request('/api/device/getDataByDeviceId', {
+    method: 'GET',
+    params
+  })
+}
+
+
 export async function removeRule(params) {
   return request('/api/rule', {
     method: 'POST',

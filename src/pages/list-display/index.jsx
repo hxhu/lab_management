@@ -16,11 +16,11 @@ import {
 import React, { useState, useRef, useEffect } from 'react';
 import { PageContainer, FooterToolbar } from '@ant-design/pro-layout';
 import ProTable from '@ant-design/pro-table';
-import { cloneDeep, get, set } from 'lodash'
+import { cloneDeep, get, set, has } from 'lodash'
 import moment from 'moment'
 import CreateForm from './components/CreateForm';
 import UpdateForm from './components/UpdateForm';
-import { queryDeviceListByUserId, updateRule, addRule, removeRule } from './service';
+import { queryDeviceListByUserId, queryDataListByDeviceId, updateRule, addRule, removeRule } from './service';
 
 const { Option } = Select;
 
@@ -98,24 +98,41 @@ const TableList = () => {
   const [selectedRowsState, setSelectedRows] = useState([]);
   const [deviceList, setDeviceList] = useState([]);
   const [deviceDetail, setDeviceDetail] = useState({});
+  const [dataList, setDataList] = useState([]);
   const columns = [
     {
       title: '数据名称',
       dataIndex: 'name',
     },
     {
-      title: '运行设备',
-      dataIndex: 'device',
+      title: '数据类型',
+      dataIndex: 'type',
+      render: type => {
+        let result = null
+        switch(type){
+          case 'list':      result="列表"; break;
+          case 'figure':    result="表格"; break;
+          case 'picture':   result="图片"; break;
+          case 'video':     result="视频"; break;
+          case 'map':       result="地图"; break;
+          case 'heartbeat': result="心跳"; break;
+          defalut:          result="未知"; break;
+        }
+        return result
+      }
     },
     {
-      title: '获取时间',
-      dataIndex: 'last_time',
+      title: '最新结果时间',
+      dataIndex: 'lastTimestamp',
       sorter: true,
       valueType: 'dateTime',
     },
     {
       title: '结果',
       dataIndex: 'value',
+      render: value => {
+        return ( value.length > 0 ) ?  value[value.length-1] : "空"
+      }
     },
   ];
 
@@ -127,32 +144,33 @@ const TableList = () => {
       }
     })
     // 类型
-    switch( tmp.type ){
-      case "sensor":   set(tmp, 'type',  '传感器'); break;
-      case "embedded": set(tmp, 'type',  '嵌入式'); break;
-      case "server":   set(tmp, 'type',  '服务器'); break;
-      default:         set(tmp, 'type',  '未知');   break;
+    switch (tmp.type) {
+      case "sensor": set(tmp, 'type', '传感器'); break;
+      case "embedded": set(tmp, 'type', '嵌入式'); break;
+      case "server": set(tmp, 'type', '服务器'); break;
+      default: set(tmp, 'type', '未知'); break;
     }
 
     // 运行状态
-    switch( tmp.status ){
-      case 0:   set(tmp, 'status',  '离线'); set(tmp, 'statusFlag', 'error');      break;
-      case 1:   set(tmp, 'status',  '在线'); set(tmp, 'statusFlag', 'processing'); break;
-      case 2:   set(tmp, 'status',  '运行'); set(tmp, 'statusFlag', 'success');    break;
-      default:  set(tmp, 'status',  '未知'); set(tmp, 'statusFlag', 'error');      break;
+    switch (tmp.status) {
+      case 0: set(tmp, 'status', '离线'); set(tmp, 'statusFlag', 'error'); break;
+      case 1: set(tmp, 'status', '在线'); set(tmp, 'statusFlag', 'processing'); break;
+      case 2: set(tmp, 'status', '运行'); set(tmp, 'statusFlag', 'success'); break;
+      default: set(tmp, 'status', '未知'); set(tmp, 'statusFlag', 'error'); break;
     }
 
     // 自动收集数据
-    switch( tmp.collectFlag ){
-      case true:   set(tmp, 'collect',  '是'); set(tmp, 'collectFlag', 'success');    break;
-      case false:  set(tmp, 'collect',  '否'); set(tmp, 'collectFlag', 'error');      break;
-      default:     set(tmp, 'collect',  '否'); set(tmp, 'collectFlag', 'error');      break;
+    switch (tmp.collectFlag) {
+      case true: set(tmp, 'collect', '是'); set(tmp, 'collectFlag', 'success'); break;
+      case false: set(tmp, 'collect', '否'); set(tmp, 'collectFlag', 'error'); break;
+      default: set(tmp, 'collect', '否'); set(tmp, 'collectFlag', 'error'); break;
     }
 
     setDeviceDetail(tmp)
-    
+
   }
 
+  // 跟据userId获取设备列表
   const getDeviceListByUserId = async userId => {
     try {
       return await queryDeviceListByUserId({
@@ -163,14 +181,42 @@ const TableList = () => {
     }
   }
 
-  useEffect(async () => {
-    const data = await getDeviceListByUserId('hu')
-    setDeviceList(data)
+  // 跟据deviceId获取数据列表
+  const getDataListByDeviceId = async deviceId => {
+    try {
+      return await queryDataListByDeviceId({
+        'deviceId': deviceId
+      }).then(rst => rst.data)
+    } catch (error) {
+      message.error('数据请求出错');
+    }
+  }
 
-    const tmp = []
-    data.forEach(v => tmp.push(<Option value={v.id}>{v.name}</Option>))
-    setProjectOptions(tmp)
+  useEffect(() => {
+    const fetchData = async () => {
+      const data = await getDeviceListByUserId('hu')
+      setDeviceList(data)
+
+      const tmp = []
+      data.forEach(v => tmp.push(<Option value={v.id}>{v.name}</Option>))
+      setProjectOptions(tmp)
+    }
+
+    fetchData()
   }, []);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      await getDeviceListByUserId('hu')
+      if (has(deviceDetail, 'id')) {
+        const dataList = await getDataListByDeviceId(get(deviceDetail, 'id'))
+        console.log(dataList)
+        setDataList(dataList)
+      }
+    }
+
+    fetchData()
+  }, [deviceDetail]);
 
   return (
     <PageContainer>
@@ -210,7 +256,7 @@ const TableList = () => {
         <Card>
           <Row gutter={16}>
             <Col span={8}>
-              <Statistic title="运行状态"  formatter={() => <Badge status={get(deviceDetail, 'statusFlag', 'error')} text={get(deviceDetail, 'status', '离线')} />} />
+              <Statistic title="运行状态" formatter={() => <Badge status={get(deviceDetail, 'statusFlag', 'error')} text={get(deviceDetail, 'status', '离线')} />} />
             </Col>
             <Col span={8}>
               <Statistic title="自动收集数据" formatter={() => <Badge status={get(deviceDetail, 'collectFlag', 'error')} text={get(deviceDetail, 'collect', '否')} />} />
@@ -231,10 +277,11 @@ const TableList = () => {
               <PlusOutlined /> 新建
           </Button>,
           ]}
-          request={(params, sorter, filter) => queryRule({ ...params, sorter, filter }).then(rst => {
-            console.log(rst) // 请求数据格式
-            return rst
-          })}
+          dataSource={dataList}
+          // request={(params, sorter, filter) => queryRule({ ...params, sorter, filter }).then(rst => {
+          //   console.log(rst) // 请求数据格式
+          //   return rst
+          // })}
           columns={columns}
           rowSelection={{
             onChange: (_, selectedRows) => setSelectedRows(selectedRows),
