@@ -10,24 +10,26 @@ import {
 } from 'antd';
 import React, { useState, useRef, useEffect } from 'react';
 import { Map, Marker } from 'react-amap';
-import { get, cloneDeep, set } from 'lodash'
+import { get, cloneDeep, set, has } from 'lodash'
 import { PageContainer, FooterToolbar } from '@ant-design/pro-layout';
 import moment from 'moment';
-import { queryDeviceListByUserId } from './service';
+import { queryDeviceListByUserId, queryDisplayByDeviceIdAndDisplayType, queryDataByDataId } from './service';
 
 
 const { Option } = Select;
 
 const MapDisplay = () => {
   const [projectOptions, setProjectOptions] = useState([]);
-  const [data, setData] = useState([]);
   const [deviceList, setDeviceList] = useState([]);
   const [deviceDetail, setDeviceDetail] = useState({});
+  const [currentDeviceId, setCurrentDeviceId] = useState(null);
+  const [currentDisplay, setCurrentDisplay] = useState({});
+  const [currentData, setCurrentData] = useState({});
 
   const onValuesChange = (changedValues) => {
     let tmp = null;
     deviceList.forEach(v => {
-      if (v.id === changedValues.name) {
+      if (v.id === changedValues.devceId) {
         tmp = cloneDeep(v)
       }
     })
@@ -55,7 +57,7 @@ const MapDisplay = () => {
     }
 
     setDeviceDetail(tmp)
-
+    setCurrentDeviceId(changedValues.devceId)
   }
 
   // 跟据userId获取设备列表
@@ -63,6 +65,29 @@ const MapDisplay = () => {
     try {
       return await queryDeviceListByUserId({
         'userId': userId
+      }).then(rst => rst.data)
+    } catch (error) {
+      message.error('设备请求出错');
+    }
+  }
+
+  // 跟据deviceId和type=video获取配置
+  const getDisplayByDeviceIdAndDisplayType = async deviceId => {
+    try {
+      return await queryDisplayByDeviceIdAndDisplayType({
+        'deviceId': deviceId,
+        'type': "map"
+      }).then(rst => rst.data)
+    } catch (error) {
+      message.error('设备请求出错');
+    }
+  }
+
+  // 跟据dataId获取数据
+  const getDataByDataId = async dataId => {
+    try {
+      return await queryDataByDataId({
+        'id': dataId
       }).then(rst => rst.data)
     } catch (error) {
       message.error('设备请求出错');
@@ -83,9 +108,21 @@ const MapDisplay = () => {
   }, []);
 
   useEffect(() => {
-    setData({
-    })
-  }, []);
+    const fetchData = async () => {
+      // 拿到当前配置data
+      const display = await getDisplayByDeviceIdAndDisplayType(currentDeviceId)
+      // 拿到当前数据
+      if (get(display, 'dataId', null) !== null) {
+        const data = await getDataByDataId(get(display, 'dataId'))
+        setCurrentDisplay(display)
+        setCurrentData(data)
+      }
+    }
+
+    if (currentDeviceId !== null) {
+      fetchData()
+    }
+  }, [currentDeviceId]);
 
   return (
     <PageContainer>
@@ -97,7 +134,7 @@ const MapDisplay = () => {
               <Form onValuesChange={onValuesChange}>
                 <Form.Item
                   label="选择设备"
-                  name="name"
+                  name="devceId"
                   rules={[{ required: true, message: '请选择设备!' }]}
                 >
                   <Select>
@@ -124,7 +161,10 @@ const MapDisplay = () => {
         {/* 地图展示 */}
         <Card>
           <Descriptions title="结果地图" bordered>
-            <Descriptions.Item label="描述">结果描述</Descriptions.Item>
+            <Descriptions.Item label="配置名">{get(currentDisplay, 'name', null)}</Descriptions.Item>
+            <Descriptions.Item label="描述">{get(currentDisplay, 'desc', null)}</Descriptions.Item>
+            <Descriptions.Item label="更新时间">{moment(get(currentData, 'lastTimestamp', 0)).format('YYYY-MM-DD HH:mm:ss')}</Descriptions.Item>
+            <Descriptions.Item label="数据来源">{has(currentData, 'value') ? get(currentData, `value.${currentData.value.length - 1}`, null) : null}</Descriptions.Item>
           </Descriptions>
           <Card hoverable bordered>
             <Row>

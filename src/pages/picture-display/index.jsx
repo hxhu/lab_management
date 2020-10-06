@@ -11,23 +11,25 @@ import {
   message
 } from 'antd';
 import React, { useState, useRef, useEffect } from 'react';
-import { get, cloneDeep, set } from 'lodash'
+import { get, cloneDeep, set, has } from 'lodash'
 import { PageContainer, FooterToolbar } from '@ant-design/pro-layout';
 import moment from 'moment';
-import { queryDeviceListByUserId } from './service';
+import { queryDeviceListByUserId, queryDisplayByDeviceIdAndDisplayType, queryDataByDataId } from './service';
 
 const { Option } = Select;
 
 const PictureDisplay = () => {
   const [projectOptions, setProjectOptions] = useState([]);
-  const [data, setData] = useState([]);
   const [deviceList, setDeviceList] = useState([]);
   const [deviceDetail, setDeviceDetail] = useState({});
+  const [currentDeviceId, setCurrentDeviceId] = useState(null);
+  const [currentDisplay, setCurrentDisplay] = useState({});
+  const [currentData, setCurrentData] = useState({});
 
   const onValuesChange = (changedValues) => {
     let tmp = null;
     deviceList.forEach(v => {
-      if (v.id === changedValues.name) {
+      if (v.id === changedValues.deviceId) {
         tmp = cloneDeep(v)
       }
     })
@@ -55,7 +57,7 @@ const PictureDisplay = () => {
     }
 
     setDeviceDetail(tmp)
-
+    setCurrentDeviceId(changedValues.deviceId)
   }
 
   // 跟据userId获取设备列表
@@ -63,6 +65,29 @@ const PictureDisplay = () => {
     try {
       return await queryDeviceListByUserId({
         'userId': userId
+      }).then(rst => rst.data)
+    } catch (error) {
+      message.error('设备请求出错');
+    }
+  }
+
+  // 跟据deviceId和type=pic获取配置
+  const getDisplayByDeviceIdAndDisplayType = async deviceId => {
+    try {
+      return await queryDisplayByDeviceIdAndDisplayType({
+        'deviceId': deviceId,
+        'type': "picture"
+      }).then(rst => rst.data)
+    } catch (error) {
+      message.error('设备请求出错');
+    }
+  }
+
+  // 跟据dataId获取数据
+  const getDataByDataId = async dataId => {
+    try {
+      return await queryDataByDataId({
+        'id': dataId
       }).then(rst => rst.data)
     } catch (error) {
       message.error('设备请求出错');
@@ -83,10 +108,22 @@ const PictureDisplay = () => {
   }, []);
 
   useEffect(() => {
-    setData({
-      src: "https://zos.alipayobjects.com/rmsportal/jkjgkEfvpUPVyRjUImniVslZfWPnJuuZ.png"
-    })
-  }, []);
+    const fetchData = async () => {
+      // 拿到当前配置data
+      const display = await getDisplayByDeviceIdAndDisplayType(currentDeviceId)
+      // 拿到当前数据
+      if (get(display, 'dataId', null) !== null) {
+        const data = await getDataByDataId(get(display, 'dataId'))
+
+        setCurrentDisplay(display)
+        setCurrentData(data)
+      }
+    }
+
+    if (currentDeviceId !== null) {
+      fetchData()
+    }
+  }, [currentDeviceId]);
 
   return (
     <PageContainer>
@@ -98,8 +135,8 @@ const PictureDisplay = () => {
               <Form onValuesChange={onValuesChange}>
                 <Form.Item
                   label="选择设备"
-                  name="name"
-                  rules={[{ required: true, message: '请选择项目!' }]}
+                  name="deviceId"
+                  rules={[{ required: true, message: '请选择设备!' }]}
                 >
                   <Select>
                     {projectOptions}
@@ -125,15 +162,19 @@ const PictureDisplay = () => {
         {/* 图片展示 */}
         <Card>
           <Descriptions title="结果图片" bordered>
-            <Descriptions.Item label="描述">结果描述</Descriptions.Item>
+            <Descriptions.Item label="配置名">{get(currentDisplay, 'name', null)}</Descriptions.Item>
+            <Descriptions.Item label="描述">{get(currentDisplay, 'desc', null)}</Descriptions.Item>
+            <Descriptions.Item label="更新时间">{moment(get(currentData, 'lastTimestamp', 0)).format('YYYY-MM-DD HH:mm:ss')}</Descriptions.Item>
+            <Descriptions.Item label="数据来源">{has(currentData, 'value') ? get(currentData, `value.${currentData.value.length - 1}`, null) : null}</Descriptions.Item>
           </Descriptions>
           <Row>
             <Col span={2} />
             <Col span={20}>
               <Card hoverable bordered>
+                {/* null时放一张测试图片 */}
                 <Image
                   style={{ width: "10%" }}
-                  src={data.src}
+                  src={has(currentData, 'value') ? get(currentData, `value.${currentData.value.length - 1}`, null) : null}
                 />
               </Card>
             </Col>

@@ -7,27 +7,30 @@ import {
   Space,
   Card,
   Select,
-  Image
+  Image,
+  message
 } from 'antd';
 import React, { useState, useRef, useEffect } from 'react';
-import { get, cloneDeep, set } from 'lodash'
+import { get, cloneDeep, set, has } from 'lodash'
 import ReactPlayer from 'react-player'
 import { PageContainer, FooterToolbar } from '@ant-design/pro-layout';
 import moment from 'moment';
-import { queryDeviceListByUserId } from './service';
+import { queryDeviceListByUserId, queryDisplayByDeviceIdAndDisplayType, queryDataByDataId } from './service';
 
 const { Option } = Select;
 
 const VideoDisplay = () => {
   const [projectOptions, setProjectOptions] = useState([]);
-  const [data, setData] = useState([]);
   const [deviceList, setDeviceList] = useState([]);
   const [deviceDetail, setDeviceDetail] = useState({});
+  const [currentDeviceId, setCurrentDeviceId] = useState(null);
+  const [currentDisplay, setCurrentDisplay] = useState({});
+  const [currentData, setCurrentData] = useState({});
 
   const onValuesChange = (changedValues) => {
     let tmp = null;
     deviceList.forEach(v => {
-      if (v.id === changedValues.name) {
+      if (v.id === changedValues.deviceId) {
         tmp = cloneDeep(v)
       }
     })
@@ -55,7 +58,7 @@ const VideoDisplay = () => {
     }
 
     setDeviceDetail(tmp)
-
+    setCurrentDeviceId(changedValues.deviceId)
   }
 
   // 跟据userId获取设备列表
@@ -63,6 +66,29 @@ const VideoDisplay = () => {
     try {
       return await queryDeviceListByUserId({
         'userId': userId
+      }).then(rst => rst.data)
+    } catch (error) {
+      message.error('设备请求出错');
+    }
+  }
+
+  // 跟据deviceId和type=video获取配置
+  const getDisplayByDeviceIdAndDisplayType = async deviceId => {
+    try {
+      return await queryDisplayByDeviceIdAndDisplayType({
+        'deviceId': deviceId,
+        'type': "video"
+      }).then(rst => rst.data)
+    } catch (error) {
+      message.error('设备请求出错');
+    }
+  }
+
+  // 跟据dataId获取数据
+  const getDataByDataId = async dataId => {
+    try {
+      return await queryDataByDataId({
+        'id': dataId
       }).then(rst => rst.data)
     } catch (error) {
       message.error('设备请求出错');
@@ -81,11 +107,23 @@ const VideoDisplay = () => {
 
     fetchData()
   }, []);
+
   useEffect(() => {
-    setData({
-      url: "https://media.w3.org/2010/05/sintel/trailer_hd.mp4"
-    })
-  }, []);
+    const fetchData = async () => {
+      // 拿到当前配置data
+      const display = await getDisplayByDeviceIdAndDisplayType(currentDeviceId)
+      // 拿到当前数据
+      if (get(display, 'dataId', null) !== null) {
+        const data = await getDataByDataId(get(display, 'dataId'))
+        setCurrentDisplay(display)
+        setCurrentData(data)
+      }
+    }
+
+    if (currentDeviceId !== null) {
+      fetchData()
+    }
+  }, [currentDeviceId]);
 
   return (
     <PageContainer>
@@ -97,7 +135,7 @@ const VideoDisplay = () => {
               <Form onValuesChange={onValuesChange}>
                 <Form.Item
                   label="选择设备"
-                  name="name"
+                  name="deviceId"
                   rules={[{ required: true, message: '请选择设备!' }]}
                 >
                   <Select>
@@ -124,7 +162,10 @@ const VideoDisplay = () => {
         {/* 视频展示 */}
         <Card>
           <Descriptions title="结果视频" bordered>
-            <Descriptions.Item label="描述">结果描述</Descriptions.Item>
+            <Descriptions.Item label="配置名">{get(currentDisplay, 'name', null)}</Descriptions.Item>
+            <Descriptions.Item label="描述">{get(currentDisplay, 'desc', null)}</Descriptions.Item>
+            <Descriptions.Item label="更新时间">{moment(get(currentData, 'lastTimestamp', 0)).format('YYYY-MM-DD HH:mm:ss')}</Descriptions.Item>
+            <Descriptions.Item label="数据来源">{has(currentData, 'value') ? get(currentData, `value.${currentData.value.length - 1}`, null) : null}</Descriptions.Item>
           </Descriptions>
           <Row>
             <Col span={2} />
@@ -136,7 +177,7 @@ const VideoDisplay = () => {
                   loop
                   width="100%"
                   height="100%"
-                  url={data.url}
+                  url={has(currentData, 'value') ? get(currentData, `value.${currentData.value.length - 1}`, null) : null}
                 />
               </Card>
             </Col>

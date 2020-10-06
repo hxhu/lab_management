@@ -7,6 +7,20 @@ export async function queryDeviceListByUserId(params) {
   })
 }
 
+export async function queryDisplayByDeviceIdAndDisplayType(params) {
+  return request('/api/device/getDisplayByDeviceIdAndDisplayType', {
+    method: 'GET',
+    params
+  })
+}
+
+export async function queryDataByDataId(params) {
+  return request('/api/dataSource/getById', {
+    method: 'GET',
+    params
+  })
+}
+
 export async function queryRule(params) {
   return request('/api/rule', {
     params,
