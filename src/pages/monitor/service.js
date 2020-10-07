@@ -14,6 +14,27 @@ export async function queryDisplayByDeviceIdAndDisplayType(params) {
   })
 }
 
+export async function queryDeviceByDeviceId(params) {
+  return request('/api/device/getById', {
+    method: 'GET',
+    params
+  })
+}
+
+export async function queryMonitorByMonitorId(params) {
+  return request('/api/monitor/getById', {
+    method: 'GET',
+    params
+  })
+}
+
+export async function queryDisplayByDisplayId(params) {
+  return request('/api/dataDisplay/getById', {
+    method: 'GET',
+    params
+  })
+}
+
 export async function queryDataByDataId(params) {
   return request('/api/dataSource/getById', {
     method: 'GET',

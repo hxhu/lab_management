@@ -14,7 +14,12 @@ import { Map, Marker } from 'react-amap';
 import { get, cloneDeep, set, has } from 'lodash'
 import { PageContainer } from '@ant-design/pro-layout';
 import moment from 'moment';
-import { queryDeviceListByUserId, queryDisplayByDeviceIdAndDisplayType, queryDataByDataId } from './service';
+import {
+  queryDeviceListByUserId,
+  queryDataByDataId,
+  queryMonitorByMonitorId,
+  queryDisplayByDisplayId
+} from './service';
 
 const { Option } = Select;
 
@@ -25,6 +30,7 @@ const MapDisplay = () => {
   const [currentDeviceId, setCurrentDeviceId] = useState(null);
   const [currentDisplay, setCurrentDisplay] = useState({});
   const [currentData, setCurrentData] = useState({});
+  const [currentMonitor, setCurrentMonitor] = useState({});
 
   const onValuesChange = (changedValues) => {
     let tmp = null;
@@ -71,18 +77,6 @@ const MapDisplay = () => {
     }
   }
 
-  // 跟据deviceId和type=video获取配置
-  const getDisplayByDeviceIdAndDisplayType = async deviceId => {
-    try {
-      return await queryDisplayByDeviceIdAndDisplayType({
-        'deviceId': deviceId,
-        'type': "map"
-      }).then(rst => rst.data)
-    } catch (error) {
-      message.error('设备请求出错');
-    }
-  }
-
   // 跟据dataId获取数据
   const getDataByDataId = async dataId => {
     try {
@@ -90,7 +84,29 @@ const MapDisplay = () => {
         'id': dataId
       }).then(rst => rst.data)
     } catch (error) {
-      message.error('设备请求出错');
+      message.error('数据请求出错');
+    }
+  }
+
+  // 跟据deivceId获取数据
+  const getDisplayByDisplayId = async displayId => {
+    try {
+      return await queryDisplayByDisplayId({
+        'id': displayId
+      }).then(rst => rst.data)
+    } catch (error) {
+      message.error('配置请求出错');
+    }
+  }
+
+  // 跟据deivceId获取数据
+  const getMonitorByMonitorId = async monitorId => {
+    try {
+      return await queryMonitorByMonitorId({
+        'id': monitorId
+      }).then(rst => rst.data)
+    } catch (error) {
+      message.error('监控请求出错');
     }
   }
 
@@ -109,19 +125,44 @@ const MapDisplay = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      // 拿到当前配置data
-      const display = await getDisplayByDeviceIdAndDisplayType(currentDeviceId)
-      // 拿到当前数据
-      if (get(display, 'dataId', null) !== null) {
-        const data = await getDataByDataId(get(display, 'dataId'))
-        setCurrentDisplay(display)
-        setCurrentData(data)
+      let monitor = null
+      let display = null
+      let data = null
+      // 拿到当前监控数据
+      if (get(deviceDetail, 'monitorId', null) !== null) {
+        monitor = await getMonitorByMonitorId(get(deviceDetail, 'monitorId'))
       }
+      if (get(monitor, 'mapId', null) !== null) {
+        display = await getDisplayByDisplayId(get(monitor, 'mapId'))
+      }
+      if (get(display, 'dataId', null) !== null) {
+        data = await getDataByDataId(get(display, 'dataId'))
+      }
+      setCurrentMonitor(monitor)
+      setCurrentDisplay(display)
+      setCurrentData(data)
     }
 
-    if (currentDeviceId !== null) {
+    if (has(deviceDetail, 'id')) {
       fetchData()
     }
+  }, [deviceDetail]);
+
+  useEffect(() => {
+    // const fetchData = async () => {
+    //   // 拿到当前监控数据
+    //   const device = await getMonitorByMonitorId(currentDeviceId)
+    //   // 拿到当前数据
+    //   if (get(monitor, 'dataId', null) !== null) {
+    //     const data = await getDataByDataId(get(display, 'dataId'))
+    //     setCurrentDisplay(display)
+    //     setCurrentData(data)
+    //   }
+    // }
+
+    // if (currentDeviceId !== null) {
+    //   fetchData()
+    // }
   }, [currentDeviceId]);
 
   return (
@@ -134,7 +175,7 @@ const MapDisplay = () => {
               <Form onValuesChange={onValuesChange}>
                 <Form.Item
                   label="选择设备"
-                  name="name"
+                  name="devceId"
                   rules={[{ required: true, message: '请选择设备!' }]}
                 >
                   <Select>
@@ -161,9 +202,10 @@ const MapDisplay = () => {
         {/* 地图展示 */}
         {/* 地图中显示 设备所在点 在线？ 运行？ 位置（经纬度） */}
         <Card>
-          <Descriptions title="结果地图" bordered>
+          <Descriptions title="监控地图" bordered>
+            <Descriptions.Item label="监控名">{get(currentMonitor, 'name', null)}</Descriptions.Item>
             <Descriptions.Item label="配置名">{get(currentDisplay, 'name', null)}</Descriptions.Item>
-            <Descriptions.Item label="描述">{get(currentDisplay, 'desc', null)}</Descriptions.Item>
+            <Descriptions.Item label="描述">{get(currentMonitor, 'desc', null)}</Descriptions.Item>
             <Descriptions.Item label="更新时间">{moment(get(currentData, 'lastTimestamp', 0)).format('YYYY-MM-DD HH:mm:ss')}</Descriptions.Item>
             <Descriptions.Item label="数据来源">{has(currentData, 'value') ? get(currentData, `value.${currentData.value.length - 1}`, null) : null}</Descriptions.Item>
           </Descriptions>
