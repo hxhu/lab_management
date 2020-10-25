@@ -8,14 +8,20 @@ import {
   Card,
   Select,
   Input,
-  Divider
+  Divider,
+  message,
+  InputNumber,
+  Switch,
+  Button
 } from 'antd';
-import React, { useState, useEffect, useRef } from 'react';
-import { get } from 'lodash'
+import React, { useState, useEffect, useRef, useForm } from 'react';
+import { get, cloneDeep, set, has } from 'lodash'
+import moment from 'moment';
 import ProTable from '@ant-design/pro-table';
 import { Line, Column, Pie, Gauge, Liquid, Scatter } from '@ant-design/charts';
 import ReactJson from 'react-json-view'
-import { PageContainer } from '@ant-design/pro-layout';
+import { PageContainer, FooterToolbar } from '@ant-design/pro-layout';
+import { queryDeviceListByUserId, queryDisplayByDeviceIdAndDisplayType, queryDataByDataId } from './service';
 
 const { Option } = Select;
 
@@ -61,35 +67,35 @@ const data = [
   [
     {
       type: '家具家电',
-      sales: 38,
+      value: 38,
     },
     {
       type: '粮油副食',
-      sales: 52,
+      value: 52,
     },
     {
       type: '生鲜水果',
-      sales: 61,
+      value: 61,
     },
     {
       type: '美容洗护',
-      sales: 145,
+      value: 145,
     },
     {
       type: '母婴用品',
-      sales: 48,
+      value: 48,
     },
     {
       type: '进口食品',
-      sales: 38,
+      value: 38,
     },
     {
       type: '食品饮料',
-      sales: 38,
+      value: 38,
     },
     {
       type: '家庭清洁',
-      sales: 38,
+      value: 38,
     },
   ],
   [
@@ -262,14 +268,15 @@ const configs = [
     forceFit: true,
     xField: 'year',
     yField: 'value',
-    label: {
-      visible: true,
-      type: 'point',
-    },
+    // label: {
+    //   visible: true,
+    //   type: 'point',
+    // },
     point: {
       visible: true,
       size: 5,
-      shape: 'diamond',
+      // shape: 'diamond',
+      shape: 'round',
       style: {
         fill: 'white',
         stroke: '#2593fc',
@@ -293,7 +300,7 @@ const configs = [
     yField: 'sales',
     meta: {
       type: { alias: '类别' },
-      sales: { alias: '销售额(万)' },
+      value: { alias: '销售额(万)' },
     },
     label: {
       visible: true,
@@ -312,7 +319,6 @@ const configs = [
       text: '描述',
     },
     radius: 0.8,
-    data,
     angleField: 'value',
     colorField: 'type',
     label: {
@@ -334,16 +340,16 @@ const configs = [
     height: 400,
     min: 0,
     max: 100,
-    range: [0, 75],
+    range: [0, 100],
     color: ['l(0) 0:#5d7cef 1:#e35767'],
-    axis: {
-      offset: -15,
-      tickLine: {
-        visible: true,
-        length: 10,
-      },
-      label: { visible: false },
-    },
+    // axis: {
+    //   offset: -15,
+    //   tickLine: {
+    //     visible: true,
+    //     length: 10,
+    //   },
+    //   label: { visible: false },
+    // },
     pivot: {
       visible: true,
       thickness: 10,
@@ -359,7 +365,7 @@ const configs = [
     statistic: {
       visible: true,
       position: ['50%', '100%'],
-      text: '26/48',
+      text: '坐标名',
       color: '#2e3033',
       size: 40,
     },
@@ -457,35 +463,437 @@ const columns = [
 ];
 
 const ProjectCom = () => {
-  const [projectOptions, setProjectOptionse] = useState([]);
+  const [projectOptions, setProjectOptions] = useState([]);
   const [data, setData] = useState([]);
   const actionRef = useRef();
+  const [deviceList, setDeviceList] = useState([]);
+  const [deviceDetail, setDeviceDetail] = useState({});
+  const [currentDeviceId, setCurrentDeviceId] = useState(null);
+  const [currentDisplay, setCurrentDisplay] = useState({});
+  const [currentData, setCurrentData] = useState({});
+  const [editConfig, setEditConfig] = useState([]);
 
+  const [configForm] = Form.useForm();
+
+  // 设备选择
+  const onValuesChange = (changedValues) => {
+    let tmp = null;
+    deviceList.forEach(v => {
+      if (v.id === changedValues.deviceId) {
+        tmp = cloneDeep(v)
+      }
+    })
+    // 类型
+    switch (tmp.type) {
+      case "sensor": set(tmp, 'type', '传感器'); break;
+      case "embedded": set(tmp, 'type', '嵌入式'); break;
+      case "server": set(tmp, 'type', '服务器'); break;
+      default: set(tmp, 'type', '未知'); break;
+    }
+
+    // 运行状态
+    switch (tmp.status) {
+      case 0: set(tmp, 'status', '离线'); set(tmp, 'statusFlag', 'error'); break;
+      case 1: set(tmp, 'status', '在线'); set(tmp, 'statusFlag', 'processing'); break;
+      case 2: set(tmp, 'status', '运行'); set(tmp, 'statusFlag', 'success'); break;
+      default: set(tmp, 'status', '未知'); set(tmp, 'statusFlag', 'error'); break;
+    }
+
+    // 自动收集数据
+    switch (tmp.collectFlag) {
+      case true: set(tmp, 'collect', '是'); set(tmp, 'collectFlag', 'success'); break;
+      case false: set(tmp, 'collect', '否'); set(tmp, 'collectFlag', 'error'); break;
+      default: set(tmp, 'collect', '否'); set(tmp, 'collectFlag', 'error'); break;
+    }
+
+    setDeviceDetail(tmp)
+    setCurrentDeviceId(changedValues.deviceId)
+  }
+  // 图表选择
+  const onChartChange = (changedValues) => { // Line, Column, Pie, Gauge, Liquid, Scatter
+    const tmp = []
+    switch (changedValues.chart) {
+      // 折线图
+      case "Line":
+        // 图表名
+        tmp.push(<Form.Item
+          label="图表名"
+          name="title"
+          rules={[{ required: true, message: '请输入图表名!' }]}
+          initialValue="折线图"
+        >
+          <Input style={{ width: "90%" }} />
+        </Form.Item>)
+        // 描述
+        tmp.push(<Form.Item
+          label="描述"
+          name="description"
+          rules={[{ required: true, message: '请输入描述!' }]}
+          initialValue="描述"
+        >
+          <Input style={{ width: "90%" }} />
+        </Form.Item>)
+        // 图表大小
+        tmp.push(<Form.Item
+          label="图表大小"
+          name="padding"
+          rules={[{ required: true, message: '请输入图表大小!' }]}
+          initialValue="auto"
+        >
+          <Input style={{ width: "90%" }} disabled />
+        </Form.Item>)
+        // x轴坐标名
+        tmp.push(<Form.Item
+          label="x轴坐标名"
+          name="xField"
+          rules={[{ required: true, message: '请输入x轴坐标名!' }]}
+          initialValue="x轴坐标名"
+        >
+          <Input style={{ width: "90%" }} />
+        </Form.Item>)
+        // y轴坐标名
+        tmp.push(<Form.Item
+          label="y轴坐标名"
+          name="yField"
+          rules={[{ required: true, message: '请输入y轴坐标名!' }]}
+          initialValue="y轴坐标名"
+        >
+          <Input style={{ width: "90%" }} />
+        </Form.Item>)
+        // 数据点形状
+        tmp.push(<Form.Item
+          label="数据点形状"
+          name="point"
+          rules={[{ required: true, message: '请输入数据点形状!' }]}
+          initialValue="数据点形状"
+        >
+          <Select style={{ width: "90%" }}>
+            <Option value="diamond">钻石</Option>
+            <Option value="round">原形</Option>
+          </Select>
+        </Form.Item>)
+        break;
+
+      // 柱状图
+      case "Column":
+        // 图表名
+        tmp.push(<Form.Item
+          label="图表名"
+          name="title"
+          rules={[{ required: true, message: '请输入图表名!' }]}
+          initialValue="柱状图"
+        >
+          <Input style={{ width: "90%" }} />
+        </Form.Item>)
+        // 描述
+        tmp.push(<Form.Item
+          label="描述"
+          name="description"
+          rules={[{ required: true, message: '请输入描述!' }]}
+          initialValue="描述"
+        >
+          <Input style={{ width: "90%" }} />
+        </Form.Item>)
+        // 图表大小
+        tmp.push(<Form.Item
+          label="图表大小"
+          name="padding"
+          rules={[{ required: true, message: '请输入图表大小!' }]}
+          initialValue="auto"
+        >
+          <InputNumber style={{ width: "90%" }} disabled />
+        </Form.Item>)
+        // x轴坐标名
+        tmp.push(<Form.Item
+          label="x轴坐标名"
+          name="xField"
+          rules={[{ required: true, message: '请输入x轴坐标名!' }]}
+          initialValue="x轴坐标名"
+        >
+          <Input style={{ width: "90%" }} />
+        </Form.Item>)
+        // y轴坐标名
+        tmp.push(<Form.Item
+          label="y轴坐标名"
+          name="yField"
+          rules={[{ required: true, message: '请输入y轴坐标名!' }]}
+          initialValue="y轴坐标名"
+        >
+          <Input style={{ width: "90%" }} />
+        </Form.Item>)
+        break;
+
+      // 饼图
+      case "Pie":
+        // 图表名
+        tmp.push(<Form.Item
+          label="图表名"
+          name="title"
+          rules={[{ required: true, message: '请输入图表名!' }]}
+          initialValue="饼图"
+        >
+          <Input style={{ width: "90%" }} />
+        </Form.Item>)
+        // 描述
+        tmp.push(<Form.Item
+          label="描述"
+          name="description"
+          rules={[{ required: true, message: '请输入描述!' }]}
+          initialValue="描述"
+        >
+          <Input style={{ width: "90%" }} />
+        </Form.Item>)
+        // 饼图半径
+        tmp.push(<Form.Item
+          label="饼图半径"
+          name="radius"
+          rules={[{ required: true, message: '请输入饼图半径!' }]}
+          initialValue={0.8}
+        >
+          <InputNumber style={{ width: "90%" }} />
+        </Form.Item>)
+        break;
+
+      // 仪表盘
+      case "Gauge":
+        // 图表名
+        tmp.push(<Form.Item
+          label="图表名"
+          name="title"
+          rules={[{ required: true, message: '请输入图表名!' }]}
+          initialValue="仪表盘"
+        >
+          <Input style={{ width: "90%" }} />
+        </Form.Item>)
+        // 描述
+        tmp.push(<Form.Item
+          label="描述"
+          name="description"
+          rules={[{ required: true, message: '请输入描述!' }]}
+          initialValue="描述"
+        >
+          <Input style={{ width: "90%" }} />
+        </Form.Item>)
+        // 最小值
+        tmp.push(<Form.Item
+          label="最小值"
+          name="min"
+          rules={[{ required: true, message: '请输入最小值!' }]}
+          initialValue={0}
+        >
+          <InputNumber style={{ width: "90%" }} />
+        </Form.Item>)
+        // 最大值
+        tmp.push(<Form.Item
+          label="最大值"
+          name="max"
+          rules={[{ required: true, message: '请输入最大值!' }]}
+          initialValue={100}
+        >
+          <InputNumber style={{ width: "90%" }} />
+        </Form.Item>)
+        // 坐标名
+        tmp.push(<Form.Item
+          label="坐标名"
+          name="statistic"
+          rules={[{ required: true, message: '请输入坐标名!' }]}
+          initialValue="坐标名"
+        >
+          <Input style={{ width: "90%" }} />
+        </Form.Item>)
+        break;
+
+      // 水波图
+      case "Liquid":
+        // 图表名
+        tmp.push(<Form.Item
+          label="图表名"
+          name="title"
+          rules={[{ required: true, message: '请输入图表名!' }]}
+          initialValue="水波图"
+        >
+          <Input style={{ width: "90%" }} />
+        </Form.Item>)
+        // 描述
+        tmp.push(<Form.Item
+          label="描述"
+          name="description"
+          rules={[{ required: true, message: '请输入描述!' }]}
+          initialValue="描述"
+        >
+          <Input style={{ width: "90%" }} />
+        </Form.Item>)
+        // 最小值
+        tmp.push(<Form.Item
+          label="最小值"
+          name="min"
+          rules={[{ required: true, message: '请输入最小值!' }]}
+          initialValue={0}
+        >
+          <InputNumber style={{ width: "90%" }} />
+        </Form.Item>)
+        // 最大值
+        tmp.push(<Form.Item
+          label="最大值"
+          name="max"
+          rules={[{ required: true, message: '请输入最大值!' }]}
+          initialValue={10000}
+        >
+          <InputNumber style={{ width: "90%" }} />
+        </Form.Item>)
+        break;
+
+      // 散点图
+      case "Scatter":
+        // 图表名
+        tmp.push(<Form.Item
+          label="图表名"
+          name="title"
+          rules={[{ required: true, message: '请输入图表名!' }]}
+          initialValue="散点图"
+        >
+          <Input style={{ width: "90%" }} />
+        </Form.Item>)
+        // 描述
+        tmp.push(<Form.Item
+          label="描述"
+          name="description"
+          rules={[{ required: true, message: '请输入描述!' }]}
+          initialValue="描述"
+        >
+          <Input style={{ width: "90%" }} />
+        </Form.Item>)
+        // x轴坐标名
+        tmp.push(<Form.Item
+          label="x轴坐标名"
+          name="xField"
+          rules={[{ required: true, message: '请输入x轴坐标名!' }]}
+          initialValue="x轴坐标名"
+        >
+          <Input style={{ width: "90%" }} />
+        </Form.Item>)
+        // y轴坐标名
+        tmp.push(<Form.Item
+          label="y轴坐标名"
+          name="yField"
+          rules={[{ required: true, message: '请输入y轴坐标名!' }]}
+          initialValue="y轴坐标名"
+        >
+          <Input style={{ width: "90%" }} />
+        </Form.Item>)
+        // 拟合线
+        tmp.push(<Form.Item
+          label="拟合线"
+          name="trendline"
+          rules={[{ required: true, message: '请输入拟合线!' }]}
+          initialValue
+        >
+          <Switch />
+        </Form.Item>)
+        break;
+
+      default:
+        tmp = []
+        break;
+    }
+
+    setEditConfig(tmp)
+
+  }
   useEffect(() => {
-    const tmp = [
-      <Option value="nano">nano</Option>,
-      <Option value="firefly">firefly</Option>,
-      <Option value="nvidia">nvidia</Option>
-    ]
-    setProjectOptionse(tmp)
-  }, []);
-
+    configForm.resetFields()
+  }, [editConfig])
+  // 图表配置表单设置
   const formItemLayout = {
     labelCol: { span: 6 },
     wrapperCol: { span: 14 },
   };
+  const tailLayout = {
+    wrapperCol: { offset: 8, span: 16 },
+  };
+  const onConfigFinish = values => {
+    console.log(values);
+  };
+  const onConfigReset = () => {
+    configForm.resetFields();
+  };
 
-  return (
-    <PageContainer>
-      <Space direction="vertical" style={{ width: "100%" }}>
-        {/* 项目选择 */}
-        <Card>
+// // 跟据userId获取设备列表
+// const getDeviceListByUserId = async userId => {
+//   try {
+//     return await queryDeviceListByUserId({
+//       'userId': userId
+//     }).then(rst => rst.data)
+//   } catch (error) {
+//     message.error('设备请求出错');
+//   }
+// }
+
+// // 跟据deviceId和type=pic获取配置
+// const getDisplayByDeviceIdAndDisplayType = async deviceId => {
+//   try {
+//     return await queryDisplayByDeviceIdAndDisplayType({
+//       'deviceId': deviceId,
+//       'type': "picture"
+//     }).then(rst => rst.data)
+//   } catch (error) {
+//     message.error('设备请求出错');
+//   }
+// }
+
+// // 跟据dataId获取数据
+// const getDataByDataId = async dataId => {
+//   try {
+//     return await queryDataByDataId({
+//       'id': dataId
+//     }).then(rst => rst.data)
+//   } catch (error) {
+//     message.error('设备请求出错');
+//   }
+// }
+
+// useEffect(() => {
+//   const fetchData = async () => {
+//     const dataTmp = await getDeviceListByUserId('hu')
+//     setDeviceList(dataTmp)
+
+//     const tmp = []
+//     dataTmp.forEach(v => tmp.push(<Option value={v.id}>{v.name}</Option>))
+//     setProjectOptions(tmp)
+//   }
+
+//   fetchData()
+// }, []);
+
+// useEffect(() => {
+//   const fetchData = async () => {
+//     // 拿到当前配置data
+//     const display = await getDisplayByDeviceIdAndDisplayType(currentDeviceId)
+//     // 拿到当前数据
+//     if (get(display, 'dataId', null) !== null) {
+//       const data = await getDataByDataId(get(display, 'dataId'))
+
+//       setCurrentDisplay(display)
+//       setCurrentData(data)
+//     }
+//   }
+
+//   if (currentDeviceId !== null) {
+//     fetchData()
+//   }
+// }, [currentDeviceId]);
+
+return (
+  <PageContainer>
+    <Space direction="vertical" style={{ width: "100%" }}>
+      {/* 项目选择 */}
+      {/* <Card>
           <Row>
             <Col span={8}>
-              <Form>
+              <Form onValuesChange={onValuesChange}>
                 <Form.Item
                   label="选择设备"
-                  name="name"
+                  name="deviceId"
                   rules={[{ required: true, message: '请选择设备!' }]}
                 >
                   <Select>
@@ -496,217 +904,200 @@ const ProjectCom = () => {
             </Col>
             <Col span={16} />
           </Row>
-        </Card>
+        </Card> */}
 
-        {/* 设备信息 */}
-        <Card>
+      {/* 设备信息 */}
+      {/* <Card>
           <Descriptions title="设备详情" bordered>
-            <Descriptions.Item label="名称">Zhou Maomao</Descriptions.Item>
-            <Descriptions.Item label="类型">1810000000</Descriptions.Item>
-            <Descriptions.Item label="ip">Hangzhou, Zhejiang</Descriptions.Item>
-            <Descriptions.Item label="状态">empty</Descriptions.Item>
-            <Descriptions.Item label="自动收集数据">Zhou Maomao</Descriptions.Item>
+            <Descriptions.Item label="名称">{get(deviceDetail, 'name', null)}</Descriptions.Item>
+            <Descriptions.Item label="类型">{get(deviceDetail, 'type', null)}</Descriptions.Item>
+            <Descriptions.Item label="描述">{get(deviceDetail, 'desc', null)}</Descriptions.Item>
+            <Descriptions.Item label="展示配置数">{get(deviceDetail, 'displayIds', []).length}</Descriptions.Item>
+            <Descriptions.Item label="注册时间">{moment(get(deviceDetail, 'registerTime', 0)).format('YYYY-MM-DD HH:mm:ss')}</Descriptions.Item>
           </Descriptions>
-        </Card>
-    
-        {/* 设备列表 */}
-        <ProTable
-          headerTitle={<strong>设备管理</strong>}
-          actionRef={actionRef}
-          rowKey="key"
-          // toolBarRender={() => [
-          //   <Button type="primary" onClick={() => setCreateComVisible(true)}>
-          //     <PlusOutlined /> 新建
-          //   </Button>,
-          // ]}
-          // request={(params, sorter, filter) => queryRule({ ...params, sorter, filter }).then(rst => {
-          //   console.log(rst) // 请求数据格式
-          //   return rst
-          // })}
-          columns={columns}
-          // rowSelection={{
-          //   onChange: (_, selectedRows) => setSelectedRows(selectedRows),
-          // }}
-        />
+        </Card> */}
 
-        {/* 选择图表类型 */}
-        <Card>
-          <Space direction="vertical" style={{ width: "100%" }}>
-            <Descriptions title="新增图表" bordered>
-              <Descriptions.Item label="描述">结果描述</Descriptions.Item>
-            </Descriptions>
 
-            <Card hoverable bordered>
-              {/* 选择图表类型 */}
-              <Row>
-                <Col span={8}>
-                  <Form>
-                    <Form.Item
-                      label="选择图表"
-                      name="name"
-                      rules={[{ required: true, message: '请选择图表!' }]}
-                    >
-                      <Select>
-                        <Option value="折线图">折线图</Option>
-                        <Option value="柱状图">柱状图</Option>
-                        <Option value="饼图">饼图</Option>
-                        <Option value="仪表图">仪表图</Option>
-                        <Option value="水波图">水波图</Option>
-                        <Option value="散点图">散点图</Option>
-                      </Select>
+      {/* 设备列表 */}
+      <ProTable
+        headerTitle={<strong>设备管理</strong>}
+        actionRef={actionRef}
+        rowKey="key"
+        // toolBarRender={() => [
+        //   <Button type="primary" onClick={() => setCreateComVisible(true)}>
+        //     <PlusOutlined /> 新建
+        //   </Button>,
+        // ]}
+        // request={(params, sorter, filter) => queryRule({ ...params, sorter, filter }).then(rst => {
+        //   console.log(rst) // 请求数据格式
+        //   return rst
+        // })}
+        columns={columns}
+      // rowSelection={{
+      //   onChange: (_, selectedRows) => setSelectedRows(selectedRows),
+      // }}
+      />
+
+      {/* 选择图表类型 */}
+      <Card>
+        <Space direction="vertical" style={{ width: "100%" }}>
+          <Descriptions title="新增图表" bordered>
+            <Descriptions.Item label="描述">配置图表显示</Descriptions.Item>
+          </Descriptions>
+
+          <Card hoverable bordered>
+            {/* 选择图表类型 */}
+            <Row>
+              <Col span={8}>
+                <Form onValuesChange={onChartChange}>
+                  <Form.Item
+                    label="选择图表"
+                    name="chart"
+                    rules={[{ required: true, message: '请选择图表!' }]}
+                  >
+                    <Select>
+                      <Option value="Line">折线图</Option>
+                      <Option value="Column">柱状图</Option>
+                      <Option value="Pie">饼图</Option>
+                      <Option value="Gauge">仪表图</Option>
+                      <Option value="Liquid">水波图</Option>
+                      <Option value="Scatter">散点图</Option>
+                    </Select>
+                  </Form.Item>
+                </Form>
+              </Col>
+              <Col span={16} />
+            </Row>
+
+            {/* 表单相关配置 */}
+            <Row>
+              <Col span={12}>
+                <Card hoverable bordered>
+                  <Form
+                    labelAlign="right"
+                    form={configForm}
+                    onFinish={onConfigFinish}
+                    {...formItemLayout}
+                  >
+                    {/* 图表配置信息 */}
+                    {editConfig}
+
+                    <Form.Item {...tailLayout}>
+                      <Button type="primary" htmlType="submit">确认</Button>
+                      <Button htmlType="button" onClick={onConfigReset}>还原</Button>
                     </Form.Item>
                   </Form>
-                </Col>
-                <Col span={16} />
-              </Row>
+                </Card>
+              </Col>
 
-              {/* 表单相关配置 */}
-              <Row>
-                <Col span={12}>
-                  <Card hoverable bordered>
-                    <Form
-                      labelAlign="right"
-                      {...formItemLayout}
-                    >
-                      {/* 图表配置信息 */}
-                      <Form.Item
-                        label="标题"
-                        name="title"
-                        rules={[{ required: true, message: '请输入标题!' }]}
-                      >
-                        <Input style={{ width: "90%" }} />
-                      </Form.Item>
+              {/* 图表示例 */}
+              <Col span={12}>
+                <Card hoverable bordered>
+                  {/* <Line {...configs[0]} /> */}
+                  {/* <Column {...configs[1]} /> */}
+                  {/* <Pie {...configs[2]}/> */}
+                  {/* <Gauge {...configs[3]}/> */}
+                  {/* <Liquid {...configs[4]}/> */}
+                  <Scatter {...configs[5]} />
+                </Card>
+              </Col>
+            </Row>
 
-                      <Form.Item
-                        label="描述"
-                        name="desc"
-                        rules={[{ required: true, message: '请输入描述!' }]}
-                      >
-                        <Input style={{ width: "90%" }} />
-                      </Form.Item>
+          </Card>
 
-                      <Form.Item
-                        label="参数1"
-                        name="args1"
-                        rules={[{ required: true, message: '请输入参数1!' }]}
-                      >
-                        <Input style={{ width: "90%" }} />
-                      </Form.Item>
+        </Space>
+      </Card>
 
-                      <Form.Item
-                        label="参数2"
-                        name="args2"
-                        rules={[{ required: true, message: '请输入参数2!' }]}
-                      >
-                        <Input style={{ width: "90%" }} />
-                      </Form.Item>
-
-
-                      <Divider />
-
-                      {/* 图表数据信息 */}
-                      {/* 坐标一配置 */}
-                      <Form.Item label="x轴数据" required>
-                        <Input.Group compact>
-                          {/* 坐标名称 */}
-                          <Form.Item
-                            name="x-name"
-                            noStyle
-                            rules={[{ required: true, message: '请输入坐标名称' }]}
-                          >
-                            <Input style={{ width: '30%' }} placeholder="坐标名称" />
-                          </Form.Item>
-
-                          {/* 坐标类型 */}
-                          <Form.Item
-                            name="x-type"
-                            noStyle
-                            rules={[{ required: true, message: '请选择坐标类型' }]}
-                          >
-                            <Select style={{ width: '30%' }} placeholder="坐标类型" >
-                              <Option value="整型">整型</Option>
-                              <Option value="浮点型">浮点型</Option>
-                              <Option value="时间">时间</Option>
-                              <Option value="文字">文字</Option>
-                            </Select>
-                          </Form.Item>
-
-                          {/* 坐标单位 */}
-                          <Form.Item
-                            name="x-unit"
-                            noStyle
-                            rules={[{ required: true, message: '请输入坐标单位' }]}
-                          >
-                            <Input style={{ width: '30%' }} placeholder="坐标单位" />
-                          </Form.Item>
-                        </Input.Group>
-                      </Form.Item>
-
-                      {/* 坐标二配置 */}
-                      <Form.Item label="y轴数据" required>
-                        <Input.Group compact>
-                          {/* 坐标名称 */}
-                          <Form.Item
-                            name="y-name"
-                            noStyle
-                            rules={[{ required: true, message: '请输入坐标名称' }]}
-                          >
-                            <Input style={{ width: '30%' }} placeholder="坐标名称" />
-                          </Form.Item>
-
-                          {/* 坐标类型 */}
-                          <Form.Item
-                            name="y-type"
-                            noStyle
-                            rules={[{ required: true, message: '请选择坐标类型' }]}
-                          >
-                            <Select style={{ width: '30%' }} placeholder="坐标类型" >
-                              <Option value="整型">整型</Option>
-                              <Option value="浮点型">浮点型</Option>
-                              <Option value="时间">时间</Option>
-                              <Option value="文字">文字</Option>
-                            </Select>
-                          </Form.Item>
-
-                          {/* 坐标单位 */}
-                          <Form.Item
-                            name="y-unit"
-                            noStyle
-                            rules={[{ required: true, message: '请输入坐标单位' }]}
-                          >
-                            <Input style={{ width: '30%' }} placeholder="坐标单位" />
-                          </Form.Item>
-                        </Input.Group>
-                      </Form.Item>
-
-                    </Form>
-                  </Card>
-                </Col>
-
-                {/* 图表示例 */}
-                <Col span={12}>
-                  <Card hoverable bordered>
-                    <Line {...configs[0]} />
-                  </Card>
-                </Col>
-              </Row>
-
-            </Card>
-
-          </Space>
-        </Card>
-
-        {/* 数据存储格式 */}
-        <Card hoverable bordered>
+      {/* 数据存储格式 */}
+      {/* <Card hoverable bordered>
           <Descriptions title="数据格式" bordered>
             <Descriptions.Item label="数据格式">
-              <ReactJson src={dataModel} name="model"/>
+              <ReactJson src={dataModel} name="model" />
             </Descriptions.Item>
           </Descriptions>
-        </Card>
-      </Space>
-    </PageContainer>
-  );
+        </Card> */}
+    </Space>
+  </PageContainer>
+);
 };
 
 export default ProjectCom;
+
+
+
+// {/* <Divider /> */}
+
+//                      {/* 图表数据信息 */}
+//                       {/* 坐标一配置 */}
+//                       <Form.Item label="x轴数据" required>
+//                         <Input.Group compact>
+//                           {/* 坐标名称 */}
+//                           <Form.Item
+//                             name="x-name"
+//                             noStyle
+//                             rules={[{ required: true, message: '请输入坐标名称' }]}
+//                           >
+//                             <Input style={{ width: '30%' }} placeholder="坐标名称" />
+//                           </Form.Item>
+
+//                           {/* 坐标类型 */}
+//                           <Form.Item
+//                             name="x-type"
+//                             noStyle
+//                             rules={[{ required: true, message: '请选择坐标类型' }]}
+//                           >
+//                             <Select style={{ width: '30%' }} placeholder="坐标类型" >
+//                               <Option value="整型">整型</Option>
+//                               <Option value="浮点型">浮点型</Option>
+//                               <Option value="时间">时间</Option>
+//                               <Option value="文字">文字</Option>
+//                             </Select>
+//                           </Form.Item>
+
+//                           {/* 坐标单位 */}
+//                           <Form.Item
+//                             name="x-unit"
+//                             noStyle
+//                             rules={[{ required: true, message: '请输入坐标单位' }]}
+//                           >
+//                             <Input style={{ width: '30%' }} placeholder="坐标单位" />
+//                           </Form.Item>
+//                         </Input.Group>
+//                       </Form.Item>
+
+//                       {/* 坐标二配置 */}
+//                       <Form.Item label="y轴数据" required>
+//                         <Input.Group compact>
+//                           {/* 坐标名称 */}
+//                           <Form.Item
+//                             name="y-name"
+//                             noStyle
+//                             rules={[{ required: true, message: '请输入坐标名称' }]}
+//                           >
+//                             <Input style={{ width: '30%' }} placeholder="坐标名称" />
+//                           </Form.Item>
+
+//                           {/* 坐标类型 */}
+//                           <Form.Item
+//                             name="y-type"
+//                             noStyle
+//                             rules={[{ required: true, message: '请选择坐标类型' }]}
+//                           >
+//                             <Select style={{ width: '30%' }} placeholder="坐标类型" >
+//                               <Option value="整型">整型</Option>
+//                               <Option value="浮点型">浮点型</Option>
+//                               <Option value="时间">时间</Option>
+//                               <Option value="文字">文字</Option>
+//                             </Select>
+//                           </Form.Item>
+
+//                           {/* 坐标单位 */}
+//                           <Form.Item
+//                             name="y-unit"
+//                             noStyle
+//                             rules={[{ required: true, message: '请输入坐标单位' }]}
+//                           >
+//                             <Input style={{ width: '30%' }} placeholder="坐标单位" />
+//                           </Form.Item>
+//                         </Input.Group>
+//                       </Form.Item>
