@@ -255,180 +255,6 @@ const data = [
   ]
 ]
 
-const configs = [
-  {
-    title: {
-      visible: true,
-      text: '折线图',
-    },
-    description: {
-      visible: true,
-      text: '描述',
-    },
-    padding: 'auto',
-    forceFit: true,
-    xField: 'year',
-    yField: 'value',
-    // label: {
-    //   visible: true,
-    //   type: 'point',
-    // },
-    point: {
-      visible: true,
-      size: 5,
-      // shape: 'diamond',
-      shape: 'round',
-      style: {
-        fill: 'white',
-        stroke: '#2593fc',
-        lineWidth: 2,
-      },
-    },
-    data: data[0]
-  },
-  {
-    title: {
-      visible: true,
-      text: '柱状图',
-    },
-    description: {
-      visible: true,
-      text: '描述',
-    },
-    forceFit: true,
-    padding: 'auto',
-    xField: 'type',
-    yField: 'value',
-    meta: {
-      type: { alias: '类别' },
-      value: { alias: '销售额(万)' },
-    },
-    label: {
-      visible: true,
-      position: 'middle',
-    },
-    data: data[1]
-  },
-  {
-    forceFit: true,
-    title: {
-      visible: true,
-      text: '饼图',
-    },
-    description: {
-      visible: true,
-      text: '描述',
-    },
-    radius: 0.8,
-    angleField: 'value',
-    colorField: 'type',
-    label: {
-      visible: true,
-      type: 'inner',
-    },
-    data: data[2]
-  },
-  {
-    title: {
-      visible: true,
-      text: '仪表盘',
-    },
-    description: {
-      visible: true,
-      text: '描述',
-    },
-    width: 400,
-    height: 400,
-    min: 0,
-    max: 100,
-    range: [0, 100],
-    color: ['l(0) 0:#5d7cef 1:#e35767'],
-    // axis: {
-    //   offset: -15,
-    //   tickLine: {
-    //     visible: true,
-    //     length: 10,
-    //   },
-    //   label: { visible: false },
-    // },
-    pivot: {
-      visible: true,
-      thickness: 10,
-      pointer: {
-        visible: true,
-        style: { fill: '#e25869' },
-      },
-      pin: {
-        visible: true,
-        style: { fill: '#e8e6ea' },
-      },
-    },
-    statistic: {
-      visible: true,
-      position: ['50%', '100%'],
-      text: '坐标名',
-      color: '#2e3033',
-      size: 40,
-    },
-    value: data[3],
-  },
-  {
-    title: {
-      visible: true,
-      text: '水波图',
-    },
-    description: {
-      visible: true,
-      text: '描述',
-    },
-    min: 0,
-    max: 10000,
-    value: data[4],
-  },
-  {
-    title: {
-      visible: true,
-      text: '散点图',
-    },
-    description: {
-      visible: true,
-      text: '描述',
-    },
-    padding: 'auto',
-    xField: 'x',
-    yField: 'y',
-    pointSize: 5,
-    pointStyle: {
-      stroke: '#777777',
-      lineWidth: 1,
-    },
-    trendline: {
-      visible: true,
-      type: 'quad',
-      showConfidence: true,
-    },
-    data: data[5]
-  }
-]
-
-const dataModel = {
-  project: "project",
-  topic: "topic",
-  chart: "chart",
-  x: {
-    name: "name",
-    type: "type",
-    value: []
-  },
-  y: {
-    name: "name",
-    type: "type",
-    value: []
-  },
-  timestamp: 1599369836,
-  cover: false // 是否覆盖原数据
-}
-
 const columns = [
   {
     title: '图表名称',
@@ -474,6 +300,7 @@ const ProjectCom = () => {
   const [editConfig, setEditConfig] = useState([]);
   const [curConfig, setCurConfig] = useState([]);
   const [CurChartTag, setCurChartTag] = useState(null);
+  const [sendFormat, setSendFormat] = useState({ 'type': [0] });
 
   const [configForm] = Form.useForm();
 
@@ -511,9 +338,44 @@ const ProjectCom = () => {
     setDeviceDetail(tmp)
     setCurrentDeviceId(changedValues.deviceId)
   }
+  // 显示配置选择
+  const onDisplayTypeChange = (changedValues) => {
+    const tmp = {}
+    switch (changedValues.displayType) {
+      case "list":
+        set(tmp, 'value', [1, 1, 1])
+        break;
+      case "figure":
+        set(tmp, 'value', {})
+        break;
+      case "picture":
+        set(tmp, 'value', "url")
+        break;
+      case "video":
+        set(tmp, 'value', "url")
+        break;
+      case "map":
+        set(tmp, 'value', "url")
+        break;
+      case "heartbeat":
+        set(tmp, 'value', [1, 1, 1])
+        break;
+      default: break;
+    }
+
+    // 设置数据发送格式
+    set(tmp, 'topic', "up/{device_id}")
+    set(tmp, 'data_id', "1234567890")
+    set(tmp, 'device_id', "qwertyuiop")
+    set(tmp, 'type', changedValues.displayType)
+
+    setSendFormat(tmp)
+  }
   // 图表选择
   const onChartChange = (changedValues) => { // Line, Column, Pie, Gauge, Liquid, Scatter
     const tmp = []
+    const tmpFormat = {}
+    // 数据显示配置
     switch (changedValues.chart) {
       // 折线图
       case "Line":
@@ -582,6 +444,8 @@ const ProjectCom = () => {
             <Option value="round">原形</Option>
           </Select>
         </Form.Item>)
+
+        set(tmpFormat, 'value', [0, 0, 0])
         break;
 
       // 柱状图
@@ -639,6 +503,8 @@ const ProjectCom = () => {
         >
           <Input style={{ width: "90%" }} />
         </Form.Item>)
+
+        set(tmpFormat, 'value', [0, 0, 0])
         break;
 
       // 饼图
@@ -678,6 +544,8 @@ const ProjectCom = () => {
         >
           <InputNumber style={{ width: "90%" }} />
         </Form.Item>)
+
+        set(tmpFormat, 'value', [0, 0, 0])
         break;
 
       // 仪表盘
@@ -735,6 +603,8 @@ const ProjectCom = () => {
         >
           <Input style={{ width: "90%" }} />
         </Form.Item>)
+
+        set(tmpFormat, 'value', [0, 0, 0])
         break;
 
       // 水波图
@@ -783,6 +653,8 @@ const ProjectCom = () => {
         >
           <InputNumber style={{ width: "90%" }} />
         </Form.Item>)
+
+        set(tmpFormat, 'value', [0, 0, 0])
         break;
 
       // 散点图
@@ -840,6 +712,8 @@ const ProjectCom = () => {
         >
           <Switch />
         </Form.Item>)
+
+        set(tmpFormat, 'value', [0, 0, 0])
         break;
 
       default:
@@ -847,8 +721,14 @@ const ProjectCom = () => {
         break;
     }
 
-    setEditConfig(tmp)
+    // 设置数据发送格式
+    set(tmpFormat, 'topic', "up/{device_id}")
+    set(tmpFormat, 'data_id', "1234567890")
+    set(tmpFormat, 'device_id', "qwertyuiop")
+    set(tmpFormat, 'type', 'figure')
 
+    setEditConfig(tmp)
+    setSendFormat(tmpFormat)
   }
   useEffect(() => {
     configForm.resetFields()
@@ -1181,76 +1061,98 @@ const ProjectCom = () => {
         {/* 选择图表类型 */}
         <Card>
           <Space direction="vertical" style={{ width: "100%" }}>
-            <Descriptions title="新增图表" bordered>
-              <Descriptions.Item label="描述">配置图表显示</Descriptions.Item>
-            </Descriptions>
+            <Descriptions title="新增显示配置" bordered />
 
             <Card hoverable bordered>
               {/* 选择图表类型 */}
               <Row>
                 <Col span={8}>
-                  <Form onValuesChange={onChartChange}>
+                  <Form onValuesChange={onDisplayTypeChange}>
                     <Form.Item
-                      label="选择图表"
-                      name="chart"
-                      rules={[{ required: true, message: '请选择图表!' }]}
+                      label="选择数据显示类型"
+                      name="displayType"
+                      rules={[{ required: true, message: '请选择数据显示类型!' }]}
                     >
                       <Select>
-                        <Option value="Line">折线图</Option>
-                        <Option value="Column">柱状图</Option>
-                        <Option value="Pie">饼图</Option>
-                        <Option value="Gauge">仪表图</Option>
-                        <Option value="Liquid">水波图</Option>
-                        <Option value="Scatter">散点图</Option>
+                        <Option value="list">列表</Option>
+                        <Option value="figure">图表</Option>
+                        <Option value="picture">图片</Option>
+                        <Option value="video">视频</Option>
+                        <Option value="map">地图</Option>
+                        <Option value="heartbeat">心跳</Option>
                       </Select>
                     </Form.Item>
                   </Form>
+                  {
+                    get(sendFormat, 'type', null) === "figure"
+                      ? <Form onValuesChange={onChartChange}>
+                        <Form.Item
+                          label="选择图表"
+                          name="chart"
+                          rules={[{ required: true, message: '请选择图表!' }]}
+                        >
+                          <Select>
+                            <Option value="Line">折线图</Option>
+                            <Option value="Column">柱状图</Option>
+                            <Option value="Pie">饼图</Option>
+                            <Option value="Gauge">仪表图</Option>
+                            <Option value="Liquid">水波图</Option>
+                            <Option value="Scatter">散点图</Option>
+                          </Select>
+                        </Form.Item>
+                      </Form>
+                      : null
+                  }
                 </Col>
                 <Col span={16} />
               </Row>
 
               {/* 表单相关配置 */}
-              <Row>
-                <Col span={12}>
-                  <Card hoverable bordered>
-                    <Form
-                      labelAlign="right"
-                      form={configForm}
-                      onFinish={onConfigFinish}
-                      {...formItemLayout}
-                    >
-                      {/* 图表配置信息 */}
-                      {editConfig}
+              {
+                get(sendFormat, 'type', null) === "figure"
+                  ? <Row>
+                    <Col span={12}>
+                      <Card hoverable bordered>
+                        <Form
+                          labelAlign="right"
+                          form={configForm}
+                          onFinish={onConfigFinish}
+                          {...formItemLayout}
+                        >
+                          {/* 图表配置信息 */}
+                          {editConfig}
 
-                      <Form.Item {...tailLayout}>
-                        <Button type="primary" htmlType="submit">确认</Button>
-                        <Button htmlType="button" onClick={onConfigReset}>还原</Button>
-                      </Form.Item>
-                    </Form>
-                  </Card>
-                </Col>
+                          <Form.Item {...tailLayout}>
+                            <Button type="primary" htmlType="submit">确认</Button>
+                            <Button htmlType="button" onClick={onConfigReset}>还原</Button>
+                          </Form.Item>
+                        </Form>
+                      </Card>
+                    </Col>
 
-                {/* 图表示例 */}
-                <Col span={12}>
-                  <Card hoverable bordered>
-                    {
-                      get(curConfig, 'chartType', null) === 'Line'
-                        ? <Line {...curConfig} />
-                        : get(curConfig, 'chartType', null) === 'Column'
-                          ? <Column {...curConfig} />
-                          : get(curConfig, 'chartType', null) === 'Pie'
-                            ? <Pie {...curConfig} />
-                            : get(curConfig, 'chartType', null) === 'Gauge'
-                              ? <Gauge {...curConfig} />
-                              : get(curConfig, 'chartType', null) === 'Liquid'
-                                ? <Liquid {...curConfig} />
-                                : get(curConfig, 'chartType', null) === 'Scatter'
-                                  ? <Scatter {...curConfig} />
-                                  : null
-                    }
-                  </Card>
-                </Col>
-              </Row>
+                    {/* 图表示例 */}
+                    <Col span={12}>
+                      <Card hoverable bordered>
+                        {
+                          get(curConfig, 'chartType', null) === 'Line'
+                            ? <Line {...curConfig} />
+                            : get(curConfig, 'chartType', null) === 'Column'
+                              ? <Column {...curConfig} />
+                              : get(curConfig, 'chartType', null) === 'Pie'
+                                ? <Pie {...curConfig} />
+                                : get(curConfig, 'chartType', null) === 'Gauge'
+                                  ? <Gauge {...curConfig} />
+                                  : get(curConfig, 'chartType', null) === 'Liquid'
+                                    ? <Liquid {...curConfig} />
+                                    : get(curConfig, 'chartType', null) === 'Scatter'
+                                      ? <Scatter {...curConfig} />
+                                      : null
+                        }
+                      </Card>
+                    </Col>
+                  </Row>
+                  : null
+              }
 
             </Card>
 
@@ -1258,13 +1160,13 @@ const ProjectCom = () => {
         </Card>
 
         {/* 数据存储格式 */}
-        {/* <Card hoverable bordered>
-          <Descriptions title="数据格式" bordered>
-            <Descriptions.Item label="数据格式">
-              <ReactJson src={dataModel} name="model" />
+        <Card hoverable bordered>
+          <Descriptions title="发送数据格式" bordered>
+            <Descriptions.Item label="发送数据格式">
+              <ReactJson src={sendFormat} name="sendFormat" />
             </Descriptions.Item>
           </Descriptions>
-        </Card> */}
+        </Card>
       </Space>
     </PageContainer>
   );
