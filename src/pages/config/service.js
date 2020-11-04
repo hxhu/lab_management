@@ -21,6 +21,13 @@ export async function queryDataByDataId(params) {
   })
 }
 
+export async function queryDisplaysBydeviceId(params) {
+  return request('/api/device/getDisplaysById', {
+    method: 'GET',
+    params
+  })
+}
+
 export async function queryRule(params) {
   return request('/api/rule', {
     params,

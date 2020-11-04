@@ -22,7 +22,7 @@ import ProTable from '@ant-design/pro-table';
 import { Line, Column, Pie, Gauge, Liquid, Scatter } from '@ant-design/charts';
 import ReactJson from 'react-json-view'
 import { PageContainer, FooterToolbar } from '@ant-design/pro-layout';
-import { queryDeviceListByUserId, queryDisplayByDeviceIdAndDisplayType, queryDataByDataId } from './service';
+import { queryDeviceListByUserId, queryDisplayByDeviceIdAndDisplayType, queryDataByDataId, queryDisplaysBydeviceId } from './service';
 
 const { Option } = Select;
 
@@ -268,6 +268,19 @@ const columns = [
   {
     title: '类型',
     dataIndex: 'type',
+    render: v => {
+      let turn = null
+      switch (v) {
+        case "list":      turn = "列表"; break;
+        case "figure":    turn = "图表"; break;
+        case "picture":   turn = "图片"; break;
+        case "video":     turn = "视频"; break;
+        case "map":       turn = "地图"; break;
+        case "heartbeat": turn = "心跳"; break;
+        default:          turn = "未知"; break;
+      }
+      return turn
+    }
   },
   {
     title: '发送格式',
@@ -299,6 +312,7 @@ const ProjectCom = () => {
   const [currentData, setCurrentData] = useState({});
   const [editConfig, setEditConfig] = useState([]);
   const [curConfig, setCurConfig] = useState([]);
+  const [displayCurList, setDisplayCurList] = useState([]);
   const [CurChartTag, setCurChartTag] = useState(null);
   const [sendFormat, setSendFormat] = useState({ 'type': [0] });
 
@@ -938,76 +952,94 @@ const ProjectCom = () => {
     configForm.resetFields();
   };
 
-  // // 跟据userId获取设备列表
-  // const getDeviceListByUserId = async userId => {
-  //   try {
-  //     return await queryDeviceListByUserId({
-  //       'userId': userId
-  //     }).then(rst => rst.data)
-  //   } catch (error) {
-  //     message.error('设备请求出错');
-  //   }
-  // }
+  // 跟据deviceId全部配置
+  const getDisplaysBydeviceId = async deviceId => {
+    try {
+      return await queryDisplaysBydeviceId({
+        'id': deviceId
+      }).then(rst => rst.data )
+    } catch (error) {
+      message.error('设备请求出错');
+    }
+  }
 
-  // // 跟据deviceId和type=pic获取配置
-  // const getDisplayByDeviceIdAndDisplayType = async deviceId => {
-  //   try {
-  //     return await queryDisplayByDeviceIdAndDisplayType({
-  //       'deviceId': deviceId,
-  //       'type': "picture"
-  //     }).then(rst => rst.data)
-  //   } catch (error) {
-  //     message.error('设备请求出错');
-  //   }
-  // }
+  // 跟据userId获取设备列表
+  const getDeviceListByUserId = async userId => {
+    try {
+      return await queryDeviceListByUserId({
+        'userId': userId
+      }).then(rst => rst.data)
+    } catch (error) {
+      message.error('设备请求出错');
+    }
+  }
 
-  // // 跟据dataId获取数据
-  // const getDataByDataId = async dataId => {
-  //   try {
-  //     return await queryDataByDataId({
-  //       'id': dataId
-  //     }).then(rst => rst.data)
-  //   } catch (error) {
-  //     message.error('设备请求出错');
-  //   }
-  // }
+  // 跟据deviceId和type=pic获取配置
+  const getDisplayByDeviceIdAndDisplayType = async deviceId => {
+    try {
+      return await queryDisplayByDeviceIdAndDisplayType({
+        'deviceId': deviceId,
+        'type': "picture"
+      }).then(rst => rst.data)
+    } catch (error) {
+      message.error('设备请求出错');
+    }
+  }
 
-  // useEffect(() => {
-  //   const fetchData = async () => {
-  //     const dataTmp = await getDeviceListByUserId('hu')
-  //     setDeviceList(dataTmp)
+  // 跟据dataId获取数据
+  const getDataByDataId = async dataId => {
+    try {
+      return await queryDataByDataId({
+        'id': dataId
+      }).then(rst => rst.data)
+    } catch (error) {
+      message.error('设备请求出错');
+    }
+  }
 
-  //     const tmp = []
-  //     dataTmp.forEach(v => tmp.push(<Option value={v.id}>{v.name}</Option>))
-  //     setProjectOptions(tmp)
-  //   }
+  useEffect(() => {
+    const fetchData = async () => {
+      const dataTmp = await getDeviceListByUserId('hu')
+      setDeviceList(dataTmp)
 
-  //   fetchData()
-  // }, []);
+      const tmp = []
+      dataTmp.forEach(v => tmp.push(<Option value={v.id}>{v.name}</Option>))
+      setProjectOptions(tmp)
+    }
 
-  // useEffect(() => {
-  //   const fetchData = async () => {
-  //     // 拿到当前配置data
-  //     const display = await getDisplayByDeviceIdAndDisplayType(currentDeviceId)
-  //     // 拿到当前数据
-  //     if (get(display, 'dataId', null) !== null) {
-  //       const data = await getDataByDataId(get(display, 'dataId'))
+    fetchData()
+  }, []);
 
-  //       setCurrentDisplay(display)
-  //       setCurrentData(data)
-  //     }
-  //   }
+  useEffect(() => {
+    const fetchData = async () => {
+      // 拿到当前配置data
+      const display = await getDisplayByDeviceIdAndDisplayType(currentDeviceId)
+      // 拿到当前数据
+      if (get(display, 'dataId', null) !== null) {
+        const data = await getDataByDataId(get(display, 'dataId'))
 
-  //   if (currentDeviceId !== null) {
-  //     fetchData()
-  //   }
-  // }, [currentDeviceId]);
+        setCurrentDisplay(display)
+        setCurrentData(data)
+      }
+
+      // 拿到当前配置
+      const displayList = await getDisplaysBydeviceId(currentDeviceId)
+      // 拿到当前数据
+      if( displayList.length !== 0 ){
+        setDisplayCurList(displayList)
+      }
+    }
+
+    if (currentDeviceId !== null) {
+      fetchData()
+    }
+  }, [currentDeviceId]);
 
   return (
     <PageContainer>
       <Space direction="vertical" style={{ width: "100%" }}>
         {/* 项目选择 */}
-        {/* <Card>
+        <Card>
           <Row>
             <Col span={8}>
               <Form onValuesChange={onValuesChange}>
@@ -1024,10 +1056,10 @@ const ProjectCom = () => {
             </Col>
             <Col span={16} />
           </Row>
-        </Card> */}
+        </Card>
 
         {/* 设备信息 */}
-        {/* <Card>
+        <Card>
           <Descriptions title="设备详情" bordered>
             <Descriptions.Item label="名称">{get(deviceDetail, 'name', null)}</Descriptions.Item>
             <Descriptions.Item label="类型">{get(deviceDetail, 'type', null)}</Descriptions.Item>
@@ -1035,14 +1067,15 @@ const ProjectCom = () => {
             <Descriptions.Item label="展示配置数">{get(deviceDetail, 'displayIds', []).length}</Descriptions.Item>
             <Descriptions.Item label="注册时间">{moment(get(deviceDetail, 'registerTime', 0)).format('YYYY-MM-DD HH:mm:ss')}</Descriptions.Item>
           </Descriptions>
-        </Card> */}
+        </Card>
 
 
         {/* 设备列表 */}
         <ProTable
-          headerTitle={<strong>设备管理</strong>}
+          headerTitle={<strong>显示配置</strong>}
           actionRef={actionRef}
           rowKey="key"
+          dataSource={displayCurList}
           // toolBarRender={() => [
           //   <Button type="primary" onClick={() => setCreateComVisible(true)}>
           //     <PlusOutlined /> 新建
@@ -1061,7 +1094,7 @@ const ProjectCom = () => {
         {/* 选择图表类型 */}
         <Card>
           <Space direction="vertical" style={{ width: "100%" }}>
-            <Descriptions title="新增显示配置" bordered />
+            <Descriptions title="新增显示配置" extra={<Button type="primary">添加配置</Button>} bordered/>
 
             <Card hoverable bordered>
               {/* 选择图表类型 */}
