@@ -22,7 +22,13 @@ import ProTable from '@ant-design/pro-table';
 import { Line, Column, Pie, Gauge, Liquid, Scatter } from '@ant-design/charts';
 import ReactJson from 'react-json-view'
 import { PageContainer, FooterToolbar } from '@ant-design/pro-layout';
-import { queryDeviceListByUserId, queryDisplayByDeviceIdAndDisplayType, queryDataByDataId, queryDisplaysBydeviceId } from './service';
+import {
+  queryDeviceListByUserId,
+  queryDisplayByDeviceIdAndDisplayType,
+  queryDataByDataId,
+  queryDisplaysBydeviceId,
+  addDataAndDisplay
+} from './service';
 
 const { Option } = Select;
 
@@ -271,13 +277,13 @@ const columns = [
     render: v => {
       let turn = null
       switch (v) {
-        case "list":      turn = "列表"; break;
-        case "figure":    turn = "图表"; break;
-        case "picture":   turn = "图片"; break;
-        case "video":     turn = "视频"; break;
-        case "map":       turn = "地图"; break;
+        case "list": turn = "列表"; break;
+        case "figure": turn = "图表"; break;
+        case "picture": turn = "图片"; break;
+        case "video": turn = "视频"; break;
+        case "map": turn = "地图"; break;
         case "heartbeat": turn = "心跳"; break;
-        default:          turn = "未知"; break;
+        default: turn = "未知"; break;
       }
       return turn
     }
@@ -355,27 +361,37 @@ const ProjectCom = () => {
   // 显示配置选择
   const onDisplayTypeChange = (changedValues) => {
     const tmp = {}
+    const config = {}
     switch (changedValues.displayType) {
       case "list":
         set(tmp, 'value', [1, 1, 1])
+        set(config, 'type', "list")
         break;
       case "figure":
         set(tmp, 'value', {})
         break;
       case "picture":
         set(tmp, 'value', "url")
+        set(config, 'type', "picture")
         break;
       case "video":
         set(tmp, 'value', "url")
+        set(config, 'type', "video")
         break;
       case "map":
         set(tmp, 'value', "url")
+        set(config, 'type', "map")
         break;
       case "heartbeat":
         set(tmp, 'value', [1, 1, 1])
+        set(config, 'type', "heartbeat")
         break;
       default: break;
     }
+    // 设置当前配置
+    set(config, 'name', "显示")
+    set(config, 'desc', "描述")
+    setCurConfig(config)
 
     // 设置数据发送格式
     set(tmp, 'topic', "up/{device_id}")
@@ -957,7 +973,7 @@ const ProjectCom = () => {
     try {
       return await queryDisplaysBydeviceId({
         'id': deviceId
-      }).then(rst => rst.data )
+      }).then(rst => rst.data)
     } catch (error) {
       message.error('设备请求出错');
     }
@@ -997,6 +1013,41 @@ const ProjectCom = () => {
     }
   }
 
+  // 新建数据和配置
+  const onAddDataAndDisplay = async () => {
+    let requestData = {}
+    let requestConfigs = {}
+
+    if( has(curConfig, 'type') ){
+      requestData = { ...curConfig }
+      requestConfigs = {}
+    }else{
+      set(requestData, 'type', 'figure')
+      set(requestData, 'name', get(curConfig, 'title.text', null))  
+      set(requestData, 'desc', get(curConfig, 'description.text', null))
+      requestConfigs = { ...curConfig }
+    }
+
+    console.log({
+      ...requestData,
+      "configs": { ...requestConfigs }
+    })
+
+    await addDataAndDisplay({
+      ...requestData,
+      "configs": { ...requestConfigs }
+    }).then(v => {
+      if(v.code === 2000){
+        message.success("添加成功")
+      }else{
+        message.error("添加失败")
+      }
+    })
+  }
+  const onOtherConfigChange = (changedValues, allValues) => {
+    setCurConfig({ ...curConfig, ...allValues })
+  }
+
   useEffect(() => {
     const fetchData = async () => {
       const dataTmp = await getDeviceListByUserId('hu')
@@ -1025,7 +1076,7 @@ const ProjectCom = () => {
       // 拿到当前配置
       const displayList = await getDisplaysBydeviceId(currentDeviceId)
       // 拿到当前数据
-      if( displayList.length !== 0 ){
+      if (displayList.length !== 0) {
         setDisplayCurList(displayList)
       }
     }
@@ -1094,7 +1145,7 @@ const ProjectCom = () => {
         {/* 选择图表类型 */}
         <Card>
           <Space direction="vertical" style={{ width: "100%" }}>
-            <Descriptions title="新增显示配置" extra={<Button type="primary">添加配置</Button>} bordered/>
+            <Descriptions title="新增显示配置" extra={<Button type="primary" onClick={onAddDataAndDisplay}>添加配置</Button>} bordered />
 
             <Card hoverable bordered>
               {/* 选择图表类型 */}
@@ -1116,6 +1167,8 @@ const ProjectCom = () => {
                       </Select>
                     </Form.Item>
                   </Form>
+
+                  {/* 配置表单 */}
                   {
                     get(sendFormat, 'type', null) === "figure"
                       ? <Form onValuesChange={onChartChange}>
@@ -1136,11 +1189,38 @@ const ProjectCom = () => {
                       </Form>
                       : null
                   }
+                  {
+                    get(sendFormat, 'type', null) !== "figure"
+                      ? <Form
+                        labelAlign="right"
+                        form={configForm}
+                        onValuesChange={onOtherConfigChange}
+                        {...formItemLayout}
+                      >
+                        <Form.Item
+                          label="显示名"
+                          name="name"
+                          initialValue="显示"
+                        >
+                          <Input style={{ width: "90%" }} />
+                        </Form.Item>
+
+                        <Form.Item
+                          label="描述"
+                          name="desc"
+                          initialValue="描述"
+                        >
+                          <Input style={{ width: "90%" }} />
+                        </Form.Item>
+
+                      </Form>
+                      : null
+                  }
                 </Col>
                 <Col span={16} />
               </Row>
 
-              {/* 表单相关配置 */}
+              {/* 图表配置 */}
               {
                 get(sendFormat, 'type', null) === "figure"
                   ? <Row>

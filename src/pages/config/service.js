@@ -28,6 +28,15 @@ export async function queryDisplaysBydeviceId(params) {
   })
 }
 
+export async function addDataAndDisplay(params) {
+  return request('/api/dataDisplay/createDataAndDisplay', {
+    method: 'POST',
+    data: params,
+  });
+}
+
+
+
 export async function queryRule(params) {
   return request('/api/rule', {
     params,
