@@ -8,27 +8,31 @@ import {
   Card,
   Select,
   Spin,
-
 } from 'antd';
 import React, { useState, useRef, useEffect } from 'react';
-import { get } from 'lodash'
 import { Line, Column, Pie, Gauge, Liquid, Scatter } from '@ant-design/charts';
+import { get, cloneDeep, set, has } from 'lodash'
 import { PageContainer, FooterToolbar } from '@ant-design/pro-layout';
+import moment from 'moment';
+import { 
+  queryDeviceListByUserId, 
+  queryDisplayByDeviceIdAndDisplayType, 
+  queryDataByDataId, 
+  queryFigureByDeviceId, 
+  queryDataByDisplayIds 
+} from './service';
 
 const { Option } = Select;
 
 const FigureDisplay = () => {
-  const [projectOptions, setProjectOptionse] = useState([]);
+  const [projectOptions, setProjectOptions] = useState([]);
   const [configs, setConfigs] = useState([]);
-
-  useEffect(() => {
-    const tmp = [
-      <Option value="nano">nano</Option>,
-      <Option value="firefly">firefly</Option>,
-      <Option value="nvidia">nvidia</Option>
-    ]
-    setProjectOptionse(tmp)
-  }, []);
+  const [deviceList, setDeviceList] = useState([]);
+  const [deviceDetail, setDeviceDetail] = useState({});
+  const [currentDeviceId, setCurrentDeviceId] = useState(null);
+  const [currentFigures, setCurrentFigures] = useState([]);
+  const [currentData, setCurrentData] = useState([]);
+  
 
   useEffect(() => {
     const data = [
@@ -260,7 +264,6 @@ const FigureDisplay = () => {
       ]
     ]
 
-
     // 这里应该时 map + set
     const configAndData = [
       {
@@ -420,17 +423,129 @@ const FigureDisplay = () => {
     setConfigs(configAndData)
   }, []);
 
+  const onValuesChange = (changedValues) => {
+    let tmp = null;
+    deviceList.forEach(v => {
+      if (v.id === changedValues.deviceId) {
+        tmp = cloneDeep(v)
+      }
+    })
+    // 类型
+    switch (tmp.type) {
+      case "sensor": set(tmp, 'type', '传感器'); break;
+      case "embedded": set(tmp, 'type', '嵌入式'); break;
+      case "server": set(tmp, 'type', '服务器'); break;
+      default: set(tmp, 'type', '未知'); break;
+    }
+
+    // 运行状态
+    switch (tmp.status) {
+      case 0: set(tmp, 'status', '离线'); set(tmp, 'statusFlag', 'error'); break;
+      case 1: set(tmp, 'status', '在线'); set(tmp, 'statusFlag', 'processing'); break;
+      case 2: set(tmp, 'status', '运行'); set(tmp, 'statusFlag', 'success'); break;
+      default: set(tmp, 'status', '未知'); set(tmp, 'statusFlag', 'error'); break;
+    }
+
+    // 自动收集数据
+    switch (tmp.collectFlag) {
+      case true: set(tmp, 'collect', '是'); set(tmp, 'collectFlag', 'success'); break;
+      case false: set(tmp, 'collect', '否'); set(tmp, 'collectFlag', 'error'); break;
+      default: set(tmp, 'collect', '否'); set(tmp, 'collectFlag', 'error'); break;
+    }
+
+    setDeviceDetail(tmp)
+    setCurrentDeviceId(changedValues.deviceId)
+  }
+
+  // 跟据userId获取设备列表
+  const getDeviceListByUserId = async userId => {
+    try {
+      return await queryDeviceListByUserId({
+        'userId': userId
+      }).then(rst => rst.data)
+    } catch (error) {
+      message.error('设备请求出错');
+    }
+  }
+
+  // 跟据deviceId和type=pic获取配置
+  const getDisplayByDeviceIdAndDisplayType = async deviceId => {
+    try {
+      return await queryDisplayByDeviceIdAndDisplayType({
+        'deviceId': deviceId,
+        'type': "picture"
+      }).then(rst => rst.data)
+    } catch (error) {
+      message.error('设备请求出错');
+    }
+  }
+
+  // 跟据dataId获取数据
+  const getDataByDataId = async dataId => {
+    try {
+      return await queryDataByDataId({
+        'id': dataId
+      }).then(rst => rst.data)
+    } catch (error) {
+      message.error('设备请求出错');
+    }
+  }
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const dataTmp = await getDeviceListByUserId('hu')
+      setDeviceList(dataTmp)
+
+      const tmp = []
+      dataTmp.forEach(v => tmp.push(<Option value={v.id}>{v.name}</Option>))
+      setProjectOptions(tmp)
+    }
+
+    fetchData()
+  }, []);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      // 拿到当前配置data
+      // const display = await getDisplayByDeviceIdAndDisplayType(currentDeviceId)
+
+      // // 拿到当前图表显示
+      const figures = await queryFigureByDeviceId({ id: currentDeviceId })
+      const dataIds = []
+      figures.data.forEach( v => {
+        dataIds.push( v.dataId )
+      })
+      const data = await queryDataByDisplayIds({ ids: dataIds })
+      // // 拿到当前数据
+      // if (get(display, 'dataId', null) !== null) {
+      //   const data = await getDataByDataId(get(display, 'dataId'))
+
+      //   setCurrentDisplay(display)
+      //   setCurrentData(data)
+      // }
+      setCurrentFigures(figures.data)
+      setCurrentData(data.data)
+    }
+
+    if (currentDeviceId !== null) {
+      fetchData()
+    }
+  }, [currentDeviceId]);
+
   return (
     <PageContainer>
+      {
+        console.log(currentData)
+      }
       <Space direction="vertical" style={{ width: "100%" }}>
         {/* 项目选择 */}
         <Card>
           <Row>
             <Col span={8}>
-              <Form>
+              <Form onValuesChange={onValuesChange}>
                 <Form.Item
                   label="选择设备"
-                  name="name"
+                  name="deviceId"
                   rules={[{ required: true, message: '请选择设备!' }]}
                 >
                   <Select>
@@ -446,11 +561,11 @@ const FigureDisplay = () => {
         {/* 设备信息 */}
         <Card>
           <Descriptions title="设备详情" bordered>
-            <Descriptions.Item label="名称">Zhou Maomao</Descriptions.Item>
-            <Descriptions.Item label="类型">1810000000</Descriptions.Item>
-            <Descriptions.Item label="ip">Hangzhou, Zhejiang</Descriptions.Item>
-            <Descriptions.Item label="状态">empty</Descriptions.Item>
-            <Descriptions.Item label="自动收集数据">Zhou Maomao</Descriptions.Item>
+            <Descriptions.Item label="名称">{get(deviceDetail, 'name', null)}</Descriptions.Item>
+            <Descriptions.Item label="类型">{get(deviceDetail, 'type', null)}</Descriptions.Item>
+            <Descriptions.Item label="描述">{get(deviceDetail, 'desc', null)}</Descriptions.Item>
+            <Descriptions.Item label="展示配置数">{get(deviceDetail, 'displayIds', []).length}</Descriptions.Item>
+            <Descriptions.Item label="注册时间">{moment(get(deviceDetail, 'registerTime', 0)).format('YYYY-MM-DD HH:mm:ss')}</Descriptions.Item>
           </Descriptions>
         </Card>
 
