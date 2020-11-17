@@ -14,12 +14,12 @@ import { Line, Column, Pie, Gauge, Liquid, Scatter } from '@ant-design/charts';
 import { get, cloneDeep, set, has } from 'lodash'
 import { PageContainer, FooterToolbar } from '@ant-design/pro-layout';
 import moment from 'moment';
-import { 
-  queryDeviceListByUserId, 
-  queryDisplayByDeviceIdAndDisplayType, 
-  queryDataByDataId, 
-  queryFigureByDeviceId, 
-  queryDataByDisplayIds 
+import {
+  queryDeviceListByUserId,
+  queryDisplayByDeviceIdAndDisplayType,
+  queryDataByDataId,
+  queryFigureByDeviceId,
+  queryDataByDisplayIds
 } from './service';
 
 const { Option } = Select;
@@ -32,7 +32,7 @@ const FigureDisplay = () => {
   const [currentDeviceId, setCurrentDeviceId] = useState(null);
   const [currentFigures, setCurrentFigures] = useState([]);
   const [currentData, setCurrentData] = useState([]);
-  
+
 
   useEffect(() => {
     const data = [
@@ -505,6 +505,63 @@ const FigureDisplay = () => {
   }, []);
 
   useEffect(() => {
+    const tmp = []
+    currentFigures.forEach((value, index) => {
+      const config = get(currentFigures, `${index}.configs`)
+      set(config, "data", get(currentData, `${index}.value`, null))
+
+      switch ( get(value, "configs.type", null) ) {
+        case "Line":
+          tmp.push(<Col span={12}>
+            <Card style={{ width: "100%" }} hoverable bordered>
+              <Line {...config} />
+            </Card>
+          </Col>)
+          break;
+        case "Column":
+          tmp.push(<Col span={12}>
+            <Card style={{ width: "100%" }} hoverable bordered>
+              <Column {...config} />
+            </Card>
+          </Col>)
+          break;
+        case "Pie":
+          tmp.push(<Col span={12}>
+            <Card style={{ width: "100%" }} hoverable bordered>
+              <Pie {...config} />
+            </Card>
+          </Col>)
+          break;
+        case "Gauge":
+          tmp.push(<Col span={12}>
+            <Card style={{ width: "100%" }} hoverable bordered>
+              <Gauge {...config} />
+            </Card>
+          </Col>)
+          break;
+        case "Liquid":
+          tmp.push(<Col span={12}>
+            <Card style={{ width: "100%" }} hoverable bordered>
+              <Liquid {...config} />
+            </Card>
+          </Col>)
+          break;
+        case "Scatter":
+          tmp.push(<Col span={12}>
+            <Card style={{ width: "100%" }} hoverable bordered>
+              <Scatter {...config} />
+            </Card>
+          </Col>)
+          break;
+        default: break;
+      }
+
+    })
+
+    setConfigs(tmp)
+  }, [currentFigures, currentData]);
+
+  useEffect(() => {
     const fetchData = async () => {
       // 拿到当前配置data
       // const display = await getDisplayByDeviceIdAndDisplayType(currentDeviceId)
@@ -512,8 +569,8 @@ const FigureDisplay = () => {
       // // 拿到当前图表显示
       const figures = await queryFigureByDeviceId({ id: currentDeviceId })
       const dataIds = []
-      figures.data.forEach( v => {
-        dataIds.push( v.dataId )
+      figures.data.forEach(v => {
+        dataIds.push(v.dataId)
       })
       const data = await queryDataByDisplayIds({ ids: dataIds })
       // // 拿到当前数据
@@ -534,9 +591,6 @@ const FigureDisplay = () => {
 
   return (
     <PageContainer>
-      {
-        console.log(currentData)
-      }
       <Space direction="vertical" style={{ width: "100%" }}>
         {/* 项目选择 */}
         <Card>
@@ -573,49 +627,9 @@ const FigureDisplay = () => {
         <Card>
           <Descriptions title="结果图表" bordered />
           {
-            configs.length !== 0
+            currentFigures.length !== 0
               ? <Row gutter={[16, 8]}>
-                {/* 折线图 */}
-                <Col span={12}>
-                  <Card style={{ width: "100%" }} hoverable bordered>
-                    <Line {...configs[0]} />
-                  </Card>
-                </Col>
-
-                {/* 柱状图 */}
-                <Col span={12}>
-                  <Card style={{ width: "100%" }} hoverable bordered>
-                    <Column {...configs[1]} />
-                  </Card>
-                </Col>
-
-                {/* 饼图 */}
-                <Col span={12}>
-                  <Card style={{ width: "100%" }} hoverable bordered>
-                    <Pie {...configs[2]} />
-                  </Card>
-                </Col>
-
-                {/* 仪表图 */}
-                <Col span={12}>
-                  <Card style={{ width: "100%" }} hoverable bordered>
-                    <Gauge {...configs[3]} />
-                  </Card>
-                </Col>
-
-                {/* 水波图 */}
-                <Col span={12}>
-                  <Card style={{ width: "100%" }} hoverable bordered>
-                    <Liquid {...configs[4]} />
-                  </Card>
-                </Col>
-
-                {/* 散点图 */}
-                <Col span={12}>
-                  <Card style={{ width: "100%" }} hoverable bordered>
-                    <Scatter {...configs[5]} />
-                  </Card>
-                </Col>
+                {configs}
               </Row>
               : <Spin tip="Loading..." />
           }
@@ -626,3 +640,52 @@ const FigureDisplay = () => {
 };
 
 export default FigureDisplay;
+
+
+// {
+//   configs.length !== 0
+//     ? <Row gutter={[16, 8]}>
+//       {/* 折线图 */}
+//       <Col span={12}>
+//         <Card style={{ width: "100%" }} hoverable bordered>
+//           <Line {...configs[0]} />
+//         </Card>
+//       </Col>
+
+//       {/* 柱状图 */}
+//       <Col span={12}>
+//         <Card style={{ width: "100%" }} hoverable bordered>
+//           <Column {...configs[1]} />
+//         </Card>
+//       </Col>
+
+//       {/* 饼图 */}
+//       <Col span={12}>
+//         <Card style={{ width: "100%" }} hoverable bordered>
+//           <Pie {...configs[2]} />
+//         </Card>
+//       </Col>
+
+//       {/* 仪表图 */}
+//       <Col span={12}>
+//         <Card style={{ width: "100%" }} hoverable bordered>
+//           <Gauge {...configs[3]} />
+//         </Card>
+//       </Col>
+
+//       {/* 水波图 */}
+//       <Col span={12}>
+//         <Card style={{ width: "100%" }} hoverable bordered>
+//           <Liquid {...configs[4]} />
+//         </Card>
+//       </Col>
+
+//       {/* 散点图 */}
+//       <Col span={12}>
+//         <Card style={{ width: "100%" }} hoverable bordered>
+//           <Scatter {...configs[5]} />
+//         </Card>
+//       </Col>
+//     </Row>
+//     : <Spin tip="Loading..." />
+// }
