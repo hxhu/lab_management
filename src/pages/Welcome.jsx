@@ -1,14 +1,14 @@
 import React from 'react';
 import { PageContainer } from '@ant-design/pro-layout';
-import { Card, Tabs, List, Avatar } from 'antd';
-import { CoffeeOutlined, WifiOutlined, DeploymentUnitOutlined, AppstoreAddOutlined, DatabaseOutlined } from '@ant-design/icons';
+import { Card, Tabs, List, Tag } from 'antd';
+import { VideoCameraAddOutlined, SettingOutlined, EditOutlined, DesktopOutlined } from '@ant-design/icons';
 import "./Welcome.css";
 
 const { TabPane } = Tabs;
 const data = [
   [
     {
-      title: "深度学习项目1"
+      title: "节点xxxxxx增加"
     },
     {
       title: "深度学习项目2"
@@ -73,61 +73,61 @@ export default () => (
   <PageContainer>
     <Card>
       <Tabs defaultActiveKey="0" onChange={callback}>
-        <TabPane tab={<span><CoffeeOutlined />深度学习</span>} key="0">
+        <TabPane tab={<span><VideoCameraAddOutlined />节点增删</span>} key="0">
           <List
             itemLayout="horizontal"
             dataSource={data[0]}
             renderItem={item => (
               <List.Item>
                 <List.Item.Meta
-                  avatar={<DatabaseOutlined />}
+                  avatar={<Tag color="blue">N</Tag>}
                   title={<a href="https://ant.design">{item.title}</a>}
-                  description="Ant Design, a design language for background applications, is refined by Ant UED Team"
+                  description="增加节点"
                 />
               </List.Item>
             )}
           />
         </TabPane>
-        <TabPane tab={<span><DeploymentUnitOutlined />物联网</span>} key="1">
+        <TabPane tab={<span><SettingOutlined />节点修改</span>} key="1">
           <List
             itemLayout="horizontal"
             dataSource={data[1]}
             renderItem={item => (
               <List.Item>
                 <List.Item.Meta
-                  avatar={<DatabaseOutlined />}
+                  avatar={<Tag color="green">M</Tag>}
                   title={<a href="https://ant.design">{item.title}</a>}
-                  description="Ant Design, a design language for background applications, is refined by Ant UED Team"
+                  description="节点修改"
                 />
               </List.Item>
             )}
           />
         </TabPane>
-        <TabPane tab={<span><WifiOutlined />通信研究</span>} key="2">
+        <TabPane tab={<span><DesktopOutlined />配置增删</span>} key="2">
           <List
             itemLayout="horizontal"
             dataSource={data[2]}
             renderItem={item => (
               <List.Item>
                 <List.Item.Meta
-                  avatar={<DatabaseOutlined />}
+                  avatar={<Tag color="red">D</Tag>}
                   title={<a href="https://ant.design">{item.title}</a>}
-                  description="Ant Design, a design language for background applications, is refined by Ant UED Team"
+                  description="删除配置"
                 />
               </List.Item>
             )}
           />
         </TabPane>
-        <TabPane tab={<span><AppstoreAddOutlined />其他项目</span>} key="3">
+        <TabPane tab={<span><EditOutlined />配置修改</span>} key="3">
           <List
             itemLayout="horizontal"
             dataSource={data[3]}
             renderItem={item => (
               <List.Item>
                 <List.Item.Meta
-                  avatar={<DatabaseOutlined />}
+                  avatar={<Tag color="green">M</Tag>}
                   title={<a href="https://ant.design">{item.title}</a>}
-                  description="Ant Design, a design language for background applications, is refined by Ant UED Team"
+                  description="配置修改"
                 />
               </List.Item>
             )}
