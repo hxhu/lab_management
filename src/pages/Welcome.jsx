@@ -11,8 +11,11 @@ import "./Welcome.css";
 
 const { TabPane } = Tabs;
 
+
 export default () => {
   const [logs, setLogs] = useState([[], [], [], []]);
+
+  const callback = () => {}
 
   useEffect(() => {
     const fetchData = async () => {
