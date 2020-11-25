@@ -1,5 +1,4 @@
 /* eslint-disable no-nested-ternary */
-import { PlusOutlined } from '@ant-design/icons';
 import {
   Descriptions,
   Row,
@@ -15,13 +14,13 @@ import {
   Switch,
   Button
 } from 'antd';
-import React, { useState, useEffect, useRef, useForm } from 'react';
-import { get, cloneDeep, set, has } from 'lodash'
+import React, { useState, useEffect, useRef } from 'react';
+import { get, cloneDeep, set, has, unset } from 'lodash'
 import moment from 'moment';
 import ProTable from '@ant-design/pro-table';
 import { Line, Column, Pie, Gauge, Liquid, Scatter } from '@ant-design/charts';
 import ReactJson from 'react-json-view'
-import { PageContainer, FooterToolbar } from '@ant-design/pro-layout';
+import { PageContainer } from '@ant-design/pro-layout';
 import {
   queryDeviceListByUserId,
   queryDisplayByDeviceIdAndDisplayType,
@@ -1028,16 +1027,14 @@ const ProjectCom = () => {
       requestConfigs = { ...curConfig }
     }
 
-    console.log({
-      ...requestData,
-      "configs": { ...requestConfigs }
-    })
+    unset( requestConfigs, 'configs.data' )
 
     await addDataAndDisplay({
       ...requestData,
       "configs": { ...requestConfigs }
     }).then(v => {
       if(v.code === 2000){
+        setSendFormat( v )
         message.success("添加成功")
       }else{
         message.error("添加失败")
@@ -1286,82 +1283,3 @@ const ProjectCom = () => {
 };
 
 export default ProjectCom;
-
-
-
-// {/* <Divider /> */}
-
-//                      {/* 图表数据信息 */}
-//                       {/* 坐标一配置 */}
-//                       <Form.Item label="x轴数据" required>
-//                         <Input.Group compact>
-//                           {/* 坐标名称 */}
-//                           <Form.Item
-//                             name="x-name"
-//                             noStyle
-//                             rules={[{ required: true, message: '请输入坐标名称' }]}
-//                           >
-//                             <Input style={{ width: '30%' }} placeholder="坐标名称" />
-//                           </Form.Item>
-
-//                           {/* 坐标类型 */}
-//                           <Form.Item
-//                             name="x-type"
-//                             noStyle
-//                             rules={[{ required: true, message: '请选择坐标类型' }]}
-//                           >
-//                             <Select style={{ width: '30%' }} placeholder="坐标类型" >
-//                               <Option value="整型">整型</Option>
-//                               <Option value="浮点型">浮点型</Option>
-//                               <Option value="时间">时间</Option>
-//                               <Option value="文字">文字</Option>
-//                             </Select>
-//                           </Form.Item>
-
-//                           {/* 坐标单位 */}
-//                           <Form.Item
-//                             name="x-unit"
-//                             noStyle
-//                             rules={[{ required: true, message: '请输入坐标单位' }]}
-//                           >
-//                             <Input style={{ width: '30%' }} placeholder="坐标单位" />
-//                           </Form.Item>
-//                         </Input.Group>
-//                       </Form.Item>
-
-//                       {/* 坐标二配置 */}
-//                       <Form.Item label="y轴数据" required>
-//                         <Input.Group compact>
-//                           {/* 坐标名称 */}
-//                           <Form.Item
-//                             name="y-name"
-//                             noStyle
-//                             rules={[{ required: true, message: '请输入坐标名称' }]}
-//                           >
-//                             <Input style={{ width: '30%' }} placeholder="坐标名称" />
-//                           </Form.Item>
-
-//                           {/* 坐标类型 */}
-//                           <Form.Item
-//                             name="y-type"
-//                             noStyle
-//                             rules={[{ required: true, message: '请选择坐标类型' }]}
-//                           >
-//                             <Select style={{ width: '30%' }} placeholder="坐标类型" >
-//                               <Option value="整型">整型</Option>
-//                               <Option value="浮点型">浮点型</Option>
-//                               <Option value="时间">时间</Option>
-//                               <Option value="文字">文字</Option>
-//                             </Select>
-//                           </Form.Item>
-
-//                           {/* 坐标单位 */}
-//                           <Form.Item
-//                             name="y-unit"
-//                             noStyle
-//                             rules={[{ required: true, message: '请输入坐标单位' }]}
-//                           >
-//                             <Input style={{ width: '30%' }} placeholder="坐标单位" />
-//                           </Form.Item>
-//                         </Input.Group>
-//                       </Form.Item>

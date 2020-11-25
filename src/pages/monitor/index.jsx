@@ -1,3 +1,4 @@
+/* eslint-disable no-nested-ternary */
 import { PlusOutlined } from '@ant-design/icons';
 import {
   Descriptions,
@@ -7,7 +8,10 @@ import {
   Space,
   Card,
   Select,
-  message
+  message,
+  Popover,
+  Badge,
+  Avatar
 } from 'antd';
 import React, { useState, useRef, useEffect } from 'react';
 import { Map, Marker } from 'react-amap';
@@ -207,7 +211,6 @@ const MapDisplay = () => {
             <Descriptions.Item label="配置名">{get(currentDisplay, 'name', null)}</Descriptions.Item>
             <Descriptions.Item label="描述">{get(currentMonitor, 'desc', null)}</Descriptions.Item>
             <Descriptions.Item label="更新时间">{moment(get(currentData, 'lastTimestamp', 0)).format('YYYY-MM-DD HH:mm:ss')}</Descriptions.Item>
-            <Descriptions.Item label="数据来源">{has(currentData, 'value') ? get(currentData, `value.${currentData.value.length - 1}`, null) : null}</Descriptions.Item>
           </Descriptions>
           <Card hoverable bordered>
             <Row>
@@ -217,7 +220,49 @@ const MapDisplay = () => {
                   <Map
                     amapkey='fc08ec888feba2e1738cbefb97817974'
                     style={{ width: "100%", height: "100%" }}
-                  />
+                  >
+                    {
+                      has(currentData, 'value') ?
+                        <Marker position={{ longitude: get(currentData, 'value[0].longitude', null), latitude: get(currentData, 'value[0].latitude', null) }} >
+
+                          <Popover
+                            style={{ width: 200, height: 100 }}
+                            content={<Descriptions
+                              size="small"
+                              column={1}
+                              bordered
+                            >
+                              <Descriptions.Item label="经度">{get(currentData, 'value[0].longitude', null)}</Descriptions.Item>
+                              <Descriptions.Item label="维度">{get(currentData, 'value[0].latitude', null)}</Descriptions.Item>
+                              <Descriptions.Item label="设备状态">
+                                {/* success | processing | default | error | warning */} {/* offline online running */}
+                                <Badge
+                                  status={get(currentData, 'value[0].status', null) === "running" ?
+                                    "success"
+                                    : get(currentData, 'value[0].status', null) === "online" ?
+                                      "processing"
+                                      : get(currentData, 'value[0].status', null) === "offline" ?
+                                        "error"
+                                        : null
+                                  }
+                                  text={get(currentData, 'value[0].status', null) === "running" ?
+                                    "运行"
+                                    : get(currentData, 'value[0].status', null) === "online" ?
+                                      "在线"
+                                      : get(currentData, 'value[0].status', null) === "offline" ?
+                                        "离线"
+                                        : null
+                                  } />
+                              </Descriptions.Item>
+                            </Descriptions>}
+                            title="节点信息"
+                          >
+                            <Avatar style={{ backgroundColor: '#22075e', verticalAlign: 'middle' }} size="small">P</Avatar>
+                          </Popover>
+
+                        </Marker>
+                        : null}
+                  </Map>
                 </div>
               </Col>
               <Col span={2} />
