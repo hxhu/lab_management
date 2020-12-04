@@ -1,9 +1,9 @@
 export default {
-  'menu.welcome': '操作日志',
+  'menu.welcome': '欢迎',
   'menu.manager': '设备管理',
   'menu.config': '结果显示配置',
   'menu.monitor': '设备监控',
-  'menu.list-display': '列表展示',
+  'menu.model-push': '模型推送',
   'menu.figure-display': '图表展示',
   'menu.picture-display': '图片展示',
   'menu.video-display': '视频展示',

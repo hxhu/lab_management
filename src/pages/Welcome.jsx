@@ -13,23 +13,24 @@ const { TabPane } = Tabs;
 
 
 export default () => {
-  const [logs, setLogs] = useState([[], [], [], []]);
+  // const [logs, setLogs] = useState([[], [], [], []]);
 
-  const callback = () => {}
+  // const callback = () => {}
 
-  useEffect(() => {
-    const fetchData = async () => {
-      const tmp = await queryLogs()
-      setLogs(tmp.data)
-    }
+  // useEffect(() => {
+  //   const fetchData = async () => {
+  //     const tmp = await queryLogs()
+  //     setLogs(tmp.data)
+  //   }
 
-    fetchData()
-  }, []);
+  //   fetchData()
+  // }, []);
 
   return (
     <PageContainer>
       <Card>
-        <Tabs defaultActiveKey="0" onChange={callback}>
+        欢迎
+        {/* <Tabs defaultActiveKey="0" onChange={callback}>
           <TabPane tab={<span><VideoCameraAddOutlined />节点增删</span>} key="0">
             <List
               itemLayout="horizontal"
@@ -90,7 +91,7 @@ export default () => {
               )}
             />
           </TabPane>
-        </Tabs>
+        </Tabs> */}
       </Card>
 
     </PageContainer>
