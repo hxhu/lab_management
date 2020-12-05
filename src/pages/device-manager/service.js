@@ -1,19 +1,5 @@
 import request from '@/utils/request';
 
-// 获取模型列表
-export async function queryModelList() {
-  return request('/api/EModel/getList', {
-    method: 'GET'
-  })
-}
-// 获取模型详细信息
-export async function queryModelById(param) {
-  return request('/api/EModel/getById', {
-    method: 'GET',
-    param
-  })
-}
-
 // 获取设备列表
 export async function queryDeviceList() {
   return request('/api/EDevice/getList', {
@@ -21,13 +7,14 @@ export async function queryDeviceList() {
   })
 }
 
-// 推送模型
-export async function pushModel(params) {
-  return request('/api/EModel/pushModel', {
-    method: 'POST',
-    data: params,
-  });
+// 删除设备
+export async function deleteDeviceById(params) {
+  return request('/api/EDevice/delete', {
+    method: 'DELETE',
+    params
+  })
 }
+
 
 
 

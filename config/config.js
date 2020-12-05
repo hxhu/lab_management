@@ -74,7 +74,7 @@ export default defineConfig({
             },
             {
               name: 'welcome',
-              icon: 'calendar',
+              icon: 'smile',
               path: '/welcome',
               component: './Welcome',
             },
@@ -98,9 +98,21 @@ export default defineConfig({
             // },
             {
               name: 'model-push',
-              icon: 'bars',
+              icon: 'download',
               path: '/model-push',
               component: './model-push',
+            },
+            {
+              name: 'video-display',
+              icon: 'video-camera',
+              path: '/video-display',
+              component: './video-display',
+            },
+            {
+              name: 'device-manager',
+              icon: 'setting',
+              path: '/device-manager',
+              component: './device-manager',
             },
             // {
             //   name: 'figure-display',

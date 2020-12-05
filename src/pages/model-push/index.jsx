@@ -1,4 +1,4 @@
-import { PlusOutlined } from '@ant-design/icons';
+import { PlusOutlined , ExclamationCircleOutlined } from '@ant-design/icons';
 import {
   Button,
   Descriptions,
@@ -9,89 +9,19 @@ import {
   Form,
   Select,
   Table,
-  Tag
+  Modal,
+  message
 } from 'antd';
 import React, { useState, useRef, useEffect } from 'react';
 import { PageContainer, FooterToolbar } from '@ant-design/pro-layout';
-import ProTable from '@ant-design/pro-table';
+
 import { cloneDeep, get, set, has } from 'lodash'
 import moment from 'moment'
-import { queryDeviceListByUserId, queryDataListByDeviceId, updateRule, addRule, removeRule } from './service';
+import ReactJson from 'react-json-view'
+import { queryModelList, queryDeviceList, pushModel } from './service';
 
 const { Option } = Select;
-
-const columns = [
-  {
-    title: 'Name',
-    dataIndex: 'name',
-    key: 'name',
-    render: text => <a>{text}</a>,
-  },
-  {
-    title: 'Age',
-    dataIndex: 'age',
-    key: 'age',
-  },
-  {
-    title: 'Address',
-    dataIndex: 'address',
-    key: 'address',
-  },
-  {
-    title: 'Tags',
-    key: 'tags',
-    dataIndex: 'tags',
-    render: tags => (
-      <>
-        {tags.map(tag => {
-          let color = tag.length > 5 ? 'geekblue' : 'green';
-          if (tag === 'loser') {
-            color = 'volcano';
-          }
-          return (
-            <Tag color={color} key={tag}>
-              {tag.toUpperCase()}
-            </Tag>
-          );
-        })}
-      </>
-    ),
-  },
-  {
-    title: 'Action',
-    key: 'action',
-    render: (text, record) => (
-      <Space size="middle">
-        <a>Invite {record.name}</a>
-        <a>Delete</a>
-      </Space>
-    ),
-  },
-];
-
-const data = [
-  {
-    key: '1',
-    name: 'John Brown',
-    age: 32,
-    address: 'New York No. 1 Lake Park',
-    tags: ['nice', 'developer'],
-  },
-  {
-    key: '2',
-    name: 'Jim Green',
-    age: 42,
-    address: 'London No. 1 Lake Park',
-    tags: ['loser'],
-  },
-  {
-    key: '3',
-    name: 'Joe Black',
-    age: 32,
-    address: 'Sidney No. 1 Lake Park',
-    tags: ['cool', 'teacher'],
-  },
-];
+const { confirm } = Modal;
 
 const ModelPush = () => {
   const [modelOptions, setModelOptions] = useState([]);
@@ -100,14 +30,178 @@ const ModelPush = () => {
   const [deviceOptions, setDeviceOptions] = useState([]);
   const [currentDevices, setCurrentDevices] = useState([]);
   const [deviceInfo, setDeviceInfo] = useState([]);
+  const [pushModelData, setPushModelData] = useState({});
 
+  const columns = [
+    {
+      title: 'ID',
+      dataIndex: 'id',
+      key: 'id'
+    },
+    {
+      title: '设备名',
+      dataIndex: 'deviceName',
+      key: 'deviceName',
+    },
+    {
+      title: '设备描述',
+      dataIndex: 'deviceDesc',
+      key: 'deviceDesc',
+    },
+    {
+      title: '模型ID',
+      dataIndex: 'currentModelId',
+      key: 'currentModelId',
+    },
+    {
+      title: '模型详情',
+      dataIndex: 'emodelOutputVO',
+      key: 'emodelOutputVO',
+      render: json => <ReactJson src={json} />
+    },
+    {
+      dataIndex: 'id',
+      key: 'action',
+      render: id => (
+        <Button
+          type="dashed"
+          onClick={() => {
+            confirm({
+              title: '确认从列表中删除该设备？',
+              icon: <ExclamationCircleOutlined />,
+              content: `设备ID: ${id}`,
+              onOk() {
+                const currentDevicesTmp = []
+                currentDevices.forEach( v => {
+                  if( v.id !== id ){
+                    currentDevicesTmp.push(v)
+                  }
+                })
+                setCurrentDevices(currentDevicesTmp)
+                message.success("删除成功")
+              },
+              onCancel() {
+                message.warning("取消删除")
+              },
+            })
+          }}
+          danger
+        >
+          删除
+        </Button>
+      ),
+    },
+  ];
+
+  // 请求模型列表
+  const getModelList = async () => {
+    try {
+      return await queryModelList()
+        .then(rst => rst.data)
+    } catch (error) {
+      message.error('请求模型列表出错');
+    }
+  }
+  useEffect(() => {
+    const fetchData = async () => {
+      const modelInfoTmp = await getModelList()
+      setModelInfo(modelInfoTmp)
+
+      const modelOptionsTmp = []
+      modelInfoTmp.forEach(v => {
+        modelOptionsTmp.push(<Option value={v.id}>{v.modelName}</Option>)
+      })
+      setModelOptions(modelOptionsTmp)
+    }
+
+    fetchData()
+  }, []);
+
+  // 选择模型
   const onValuesModelChange = (changedValues) => {
-
+    let modelInfoTmp = null
+    modelInfo.forEach(v => {
+      if (changedValues.id === v.id) {
+        modelInfoTmp = v
+      }
+    })
+    setCurrentModel(modelInfoTmp)
   }
 
-  const onValuesDeviceChange = (changedValues) => {
-
+  // 请求设备列表
+  const getDeviceList = async () => {
+    try {
+      return await queryDeviceList()
+        .then(rst => rst.data)
+    } catch (error) {
+      message.error('请求设备列表出错');
+    }
   }
+  useEffect(() => {
+    const fetchData = async () => {
+      const deviceInfoTmp = await getDeviceList()
+      setDeviceInfo(deviceInfoTmp)
+
+      const deviceOptionsTmp = []
+      deviceInfoTmp.forEach(v => {
+        deviceOptionsTmp.push(<Option value={v.id}>{v.deviceName} —— {v.id}</Option>)
+      })
+      setDeviceOptions(deviceOptionsTmp)
+    }
+
+    fetchData()
+  }, []);
+
+  // 选择设备
+  const onDevicesFinish = (values) => {
+    const currentDevicesTmp = cloneDeep(currentDevices)
+    let flag = true
+    currentDevices.forEach(v => {
+      if (values.id === v.id) {
+        flag = false
+      }
+    })
+
+    if (flag) {
+      deviceInfo.forEach(v => {
+        if (values.id === v.id) {
+          currentDevicesTmp.push(v)
+        }
+      })
+    }
+
+    setCurrentDevices(currentDevicesTmp)
+  }
+
+  // 推送模型
+  const onPushModel = () => {
+    const devicePushIds = []
+    currentDevices.forEach(v => {
+      devicePushIds.push(v.id)
+    })
+
+    const result = {
+      "deviceIds": devicePushIds,
+      "modelId": currentModel.id
+    }
+    setPushModelData(result)
+  }
+  useEffect(() => {
+    const fetchData = async () => {
+      if (has(pushModelData, 'deviceIds')) {
+        await pushModel(pushModelData).then(v => {
+          if (v.code === 2000) {
+            message.success("推送模型成功")
+          } else {
+            message.error("推送模型失败")
+          }
+        })
+      }
+    }
+
+    fetchData()
+  }, [pushModelData]);
+
 
   const tailLayout = {
     wrapperCol: { offset: 8, span: 16 },
@@ -123,7 +217,7 @@ const ModelPush = () => {
               <Form onValuesChange={onValuesModelChange}>
                 <Form.Item
                   label="选择模型"
-                  name="name"
+                  name="id"
                   rules={[{ required: true, message: '请选择模型!' }]}
                 >
                   <Select>
@@ -139,11 +233,10 @@ const ModelPush = () => {
         {/* 模型信息 */}
         <Card>
           <Descriptions title="模型详情" bordered>
-            <Descriptions.Item label="名称">名称</Descriptions.Item>
-            <Descriptions.Item label="模型位置">模型位置</Descriptions.Item>
-            <Descriptions.Item label="描述">描述</Descriptions.Item>
-            <Descriptions.Item label="生成时间">生成时间</Descriptions.Item>
-            {/* <Descriptions.Item label="生成时间">{moment(get(deviceDetail, 'registerTime', 0)).format('YYYY-MM-DD HH:mm:ss')}</Descriptions.Item> */}
+            <Descriptions.Item label="名称">{get(currentModel, 'modelName', null)}</Descriptions.Item>
+            <Descriptions.Item label="模型位置">{get(currentModel, 'modelLocation', null)}</Descriptions.Item>
+            <Descriptions.Item label="描述">{get(currentModel, 'modelDesc', null)}</Descriptions.Item>
+            <Descriptions.Item label="生成时间">{moment(get(currentModel, 'createTime', 0)).format('YYYY-MM-DD HH:mm:ss')}</Descriptions.Item>
           </Descriptions>
         </Card>
 
@@ -151,10 +244,10 @@ const ModelPush = () => {
         <Card>
           <Row>
             <Col span={8}>
-              <Form onValuesChange={onValuesDeviceChange}>
+              <Form onFinish={onDevicesFinish}>
                 <Form.Item
                   label="选择设备"
-                  name="name"
+                  name="id"
                   rules={[{ required: true, message: '请选择设备!' }]}
                 >
                   <Select>
@@ -163,7 +256,7 @@ const ModelPush = () => {
                 </Form.Item>
 
                 <Form.Item {...tailLayout}>
-                  <Button type="primary" htmlType="submit">确认</Button>
+                  <Button type="primary" htmlType="submit">添加</Button>
                   <Button htmlType="button">还原</Button>
                 </Form.Item>
               </Form>
@@ -174,12 +267,12 @@ const ModelPush = () => {
 
         {/* 设备列表 */}
         <Card>
-          <Table columns={columns} dataSource={data} />
+          <Table columns={columns} dataSource={currentDevices} />
         </Card>
 
         {/* 推送模型 */}
         <Card>
-          <Button type="primary">推送模型</Button>
+          <Button type="primary" onClick={onPushModel}>推送模型</Button>
         </Card>
 
       </Space>
