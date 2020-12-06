@@ -10,38 +10,90 @@ import {
   Select,
   Table,
   Modal,
-  message
+  message,
+  Input
 } from 'antd';
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { PageContainer, FooterToolbar } from '@ant-design/pro-layout';
 
-import { cloneDeep, get, set, has } from 'lodash'
+import { cloneDeep, get, set, has, unset, isEqual } from 'lodash'
 import moment from 'moment'
 import ReactJson from 'react-json-view'
-import { queryDeviceList, deleteDeviceById } from './service';
+import { queryDeviceList, deleteDeviceById, queryModelList, createDevice, modifyDevice } from './service';
 
+const { Option } = Select;
 const { confirm } = Modal;
 
+const tailLayout = {
+  wrapperCol: { offset: 8, span: 16 },
+};
+const layout = {
+  labelCol: { span: 8 },
+  wrapperCol: { span: 16 },
+};
+
 const DeviceManager = () => {
+  const [modelOptions, setModelOptions] = useState([]);
   const [deviceInfo, setDeviceInfo] = useState([]);
   const [newVisible, setNewVisible] = useState(false);
   const [updateVisible, setUpdateVisible] = useState(false);
+  const [newDevice, setNewDevice] = useState({});
+  const [updateDevice, setUpdateDevice] = useState({});
+  
+  const [newForm] = Form.useForm();
+  const [updateForm] = Form.useForm();
 
   // 新建设备相关
   const onNewDeviceCancel = () => {
     setNewVisible(false)
-  }
-  const onNewDeviceOK = () => {
-
   }
 
   // 修改设备相关
   const onUpdateDeviceCancel = () => {
     setUpdateVisible(false)
   }
-  const onUpdateDeviceOK = () => {
-    
+
+  // 修改设备Modal
+  const onUpdateReset = () => {
+    updateForm.resetFields();
   }
+  const onUpdateFinish = values => {
+    let updateDeviceTmp = {}
+
+    set(updateDeviceTmp, 'id', values.id)
+    set(updateDeviceTmp, 'deviceName', values.deviceName)
+    if (values.currentModelId !== null) {
+      set(updateDeviceTmp, 'currentModelId', values.currentModelId)
+    }
+    if (values.deviceDesc !== null) {
+      set(updateDeviceTmp, 'deviceDesc', values.deviceDesc)
+    }
+    if (values.videoMessage !== null) {
+      set(updateDeviceTmp, 'videoMessage', values.videoMessage)
+    }
+    if (values.videoRtsp !== null) {
+      set(updateDeviceTmp, 'videoRtsp', values.videoRtsp)
+    }
+
+    setUpdateDevice(updateDeviceTmp)
+    setUpdateVisible(false)
+  }
+  useEffect(() => {
+    const fetchData = async () => {
+      await modifyDevice(updateDevice)
+        .then(v => {
+          if (v.code === 2000) {
+            message.success("修改设备成功")
+          } else {
+            message.error("修改设备失败")
+          }
+        })
+    }
+
+    if ( has(updateDevice, 'id') ) {
+      fetchData()
+    }
+  }, [updateDevice]);
 
   const columns = [
     {
@@ -77,17 +129,96 @@ const DeviceManager = () => {
           {/* 修改按钮 */}
           <Button
             type="primary"
-            onClick={() => setUpdateVisible(true)}
+            onClick={() => {
+              let updateDeviceTmp = {}
+              deviceInfo.forEach(v => {
+                if (v.id === id) {
+                  updateDeviceTmp = v
+                }
+              })
+              unset(updateDeviceTmp, 'emodelOutputVO')
+              setUpdateDevice(updateDeviceTmp)
+              setUpdateVisible(true)
+            }}
           >
             修改
           </Button>
           <Modal
             title="修改设备"
             visible={updateVisible}
-            onOk={onUpdateDeviceOK}
             onCancel={onUpdateDeviceCancel}
+            footer={null}
           >
-            <p>修改设备</p>
+            <Form
+              {...layout}
+              form={updateForm}
+              initialValues={{ remember: true }}
+              onFinish={onUpdateFinish}
+              labelAlign="right"
+              initialValues={updateDevice}
+              colon={false}
+            >
+              {/* ID */}
+              <Form.Item
+                label="ID"
+                name="id"
+                rules={[{ required: true, message: '请输入ID!' }]}
+              >
+                <Input />
+              </Form.Item>
+
+              {/* deviceName */}
+              <Form.Item
+                label="设备名"
+                name="deviceName"
+                rules={[{ required: true, message: '请输入设备名!' }]}
+              >
+                <Input />
+              </Form.Item>
+
+              {/* deviceDesc */}
+              <Form.Item
+                label="设备信息"
+                name="deviceDesc"
+                initialValue={null}
+              >
+                <Input />
+              </Form.Item>
+
+              {/* videoRtsp */}
+              <Form.Item
+                label="RTSP地址"
+                name="videoRtsp"
+                initialValue={null}
+              >
+                <Input />
+              </Form.Item>
+
+              {/* videoMessage */}
+              <Form.Item
+                label="视频信息"
+                name="videoMessage"
+                initialValue={null}
+              >
+                <Input />
+              </Form.Item>
+
+              {/* currentModelId */}
+              <Form.Item
+                label="模型ID"
+                name="currentModelId"
+                initialValue={null}
+              >
+                <Select>
+                  {modelOptions}
+                </Select>
+              </Form.Item>
+
+              <Form.Item {...tailLayout}>
+                <Button type="primary" htmlType="submit">修改</Button>
+                <Button htmlType="button" onClick={onUpdateReset}>清空</Button>
+              </Form.Item>
+            </Form>
           </Modal>
 
           {/* 删除按钮 */}
@@ -143,19 +274,153 @@ const DeviceManager = () => {
     fetchData()
   }, []);
 
+  // 请求模型列表
+  const getModelList = async () => {
+    try {
+      return await queryModelList()
+        .then(rst => rst.data)
+    } catch (error) {
+      message.error('请求模型列表出错');
+    }
+  }
+  useEffect(() => {
+    const fetchData = async () => {
+      const modelInfoTmp = await getModelList()
+
+      const modelOptionsTmp = []
+      modelInfoTmp.forEach(v => {
+        modelOptionsTmp.push(<Option value={v.id}>{v.modelName} - {v.id}</Option>)
+      })
+      setModelOptions(modelOptionsTmp)
+    }
+
+    fetchData()
+  }, []);
+
+  // 注册设备Modal
+  const onNewFinish = values => {
+    let newDeviceTmp = {}
+
+    set(newDeviceTmp, 'id', values.id)
+    set(newDeviceTmp, 'deviceName', values.deviceName)
+    if (values.currentModelId !== null) {
+      set(newDeviceTmp, 'currentModelId', values.currentModelId)
+    }
+    if (values.deviceDesc !== null) {
+      set(newDeviceTmp, 'deviceDesc', values.deviceDesc)
+    }
+    if (values.videoMessage !== null) {
+      set(newDeviceTmp, 'videoMessage', values.videoMessage)
+    }
+    if (values.videoRtsp !== null) {
+      set(newDeviceTmp, 'videoRtsp', values.videoRtsp)
+    }
+
+    setNewDevice(newDeviceTmp)
+    setNewVisible(false)
+  }
+  const onNewReset = () => {
+    newForm.resetFields();
+  }
+  useEffect(() => {
+    const fetchData = async () => {
+      await createDevice(newDevice)
+        .then(v => {
+          if (v.code === 2000) {
+            message.success("注册设备成功")
+          } else {
+            message.error("注册设备失败")
+          }
+        })
+    }
+
+    if (has(newDevice, 'id')) {
+      fetchData()
+    }
+  }, [newDevice]);
+
+
   return (
     <PageContainer>
       <Space direction="vertical" style={{ width: "100%" }}>
         {/* 推送模型 */}
         <Card>
-          <Button type="primary" onClick={() => setNewVisible(true)}>新建设备</Button>
+          <Button type="primary" onClick={() => setNewVisible(true)}>注册设备</Button>
           <Modal
-            title="新建设备"
+            title="注册设备"
             visible={newVisible}
-            onOk={onNewDeviceOK}
             onCancel={onNewDeviceCancel}
+            footer={null}
           >
-            <p>新建设备</p>
+            <Form
+              {...layout}
+              form={newForm}
+              initialValues={{ remember: true }}
+              onFinish={onNewFinish}
+              labelAlign="right"
+              colon={false}
+            >
+              {/* ID */}
+              <Form.Item
+                label="ID"
+                name="id"
+                rules={[{ required: true, message: '请输入ID!' }]}
+              >
+                <Input />
+              </Form.Item>
+
+              {/* deviceName */}
+              <Form.Item
+                label="设备名"
+                name="deviceName"
+                rules={[{ required: true, message: '请输入设备名!' }]}
+              >
+                <Input />
+              </Form.Item>
+
+              {/* deviceDesc */}
+              <Form.Item
+                label="设备信息"
+                name="deviceDesc"
+                initialValue={null}
+              >
+                <Input />
+              </Form.Item>
+
+              {/* videoRtsp */}
+              <Form.Item
+                label="RTSP地址"
+                name="videoRtsp"
+                initialValue={null}
+              >
+                <Input />
+              </Form.Item>
+
+              {/* videoMessage */}
+              <Form.Item
+                label="视频信息"
+                name="videoMessage"
+                initialValue={null}
+              >
+                <Input />
+              </Form.Item>
+
+              {/* currentModelId */}
+              <Form.Item
+                label="模型ID"
+                name="currentModelId"
+                initialValue={null}
+              >
+                <Select>
+                  {modelOptions}
+                </Select>
+              </Form.Item>
+
+              <Form.Item {...tailLayout}>
+                <Button type="primary" htmlType="submit">注册</Button>
+                <Button htmlType="button" onClick={onNewReset}>清空</Button>
+              </Form.Item>
+            </Form>
           </Modal>
         </Card>
 
