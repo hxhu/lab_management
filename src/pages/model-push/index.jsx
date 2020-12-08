@@ -1,4 +1,4 @@
-import { PlusOutlined , ExclamationCircleOutlined } from '@ant-design/icons';
+import { PlusOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
 import {
   Button,
   Descriptions,
@@ -72,8 +72,8 @@ const ModelPush = () => {
               content: `设备ID: ${id}`,
               onOk() {
                 const currentDevicesTmp = []
-                currentDevices.forEach( v => {
-                  if( v.id !== id ){
+                currentDevices.forEach(v => {
+                  if (v.id !== id) {
                     currentDevicesTmp.push(v)
                   }
                 })
@@ -173,8 +173,8 @@ const ModelPush = () => {
     setCurrentDevices(currentDevicesTmp)
   }
 
-  // 推送模型
-  const onPushModel = () => {
+  // 推送模型 points
+  const onPushModelPoints = () => {
     const devicePushIds = []
     currentDevices.forEach(v => {
       devicePushIds.push(v.id)
@@ -182,7 +182,22 @@ const ModelPush = () => {
 
     const result = {
       "deviceIds": devicePushIds,
-      "modelId": currentModel.id
+      "modelId": currentModel.id,
+      "type": "points"
+    }
+    setPushModelData(result)
+  }
+  // 推送模型 boardcast
+  const onPushModelBoardcast = () => {
+    const devicePushIds = []
+    deviceInfo.forEach(v => {
+      devicePushIds.push(v.id)
+    }) 
+
+    const result = {
+      "deviceIds": devicePushIds,
+      "modelId": currentModel.id,
+      "type": "boardcast"
     }
     setPushModelData(result)
   }
@@ -201,7 +216,6 @@ const ModelPush = () => {
 
     fetchData()
   }, [pushModelData]);
-
 
   const tailLayout = {
     wrapperCol: { offset: 8, span: 16 },
@@ -240,6 +254,11 @@ const ModelPush = () => {
           </Descriptions>
         </Card>
 
+        {/* 推送模型 boardcast*/}
+        <Card>
+          <Button type="primary" onClick={onPushModelBoardcast}>广播模型</Button>
+        </Card>
+
         {/* 设备选择 */}
         <Card>
           <Row>
@@ -270,9 +289,9 @@ const ModelPush = () => {
           <Table columns={columns} dataSource={currentDevices} />
         </Card>
 
-        {/* 推送模型 */}
+        {/* 推送模型 points*/}
         <Card>
-          <Button type="primary" onClick={onPushModel}>推送模型</Button>
+          <Button type="primary" onClick={onPushModelPoints}>推送模型</Button>
         </Card>
 
       </Space>

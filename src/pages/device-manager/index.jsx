@@ -164,7 +164,7 @@ const DeviceManager = () => {
                 name="id"
                 rules={[{ required: true, message: '请输入ID!' }]}
               >
-                <Input />
+                <Input disabled />
               </Form.Item>
 
               {/* deviceName */}
