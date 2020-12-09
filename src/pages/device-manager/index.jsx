@@ -1,7 +1,7 @@
 import { PlusOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
 import {
   Button,
-  Descriptions,
+  Badge,
   Card,
   Space,
   Row,
@@ -16,13 +16,23 @@ import {
 import React, { useState, useEffect } from 'react';
 import { PageContainer, FooterToolbar } from '@ant-design/pro-layout';
 
-import { cloneDeep, get, set, has, unset, isEqual } from 'lodash'
+import { cloneDeep, get, set, has, unset } from 'lodash'
 import moment from 'moment'
 import ReactJson from 'react-json-view'
-import { queryDeviceList, deleteDeviceById, queryModelList, createDevice, modifyDevice } from './service';
+import {
+  queryDeviceList,
+  deleteDeviceById,
+  queryModelList,
+  createDevice,
+  modifyDevice,
+  createERHeartbeat,
+  deleteERHeartbeat,
+  queryStatusMap
+} from './service';
 
 const { Option } = Select;
 const { confirm } = Modal;
+let timer = null;
 
 const tailLayout = {
   wrapperCol: { offset: 8, span: 16 },
@@ -39,7 +49,8 @@ const DeviceManager = () => {
   const [updateVisible, setUpdateVisible] = useState(false);
   const [newDevice, setNewDevice] = useState({});
   const [updateDevice, setUpdateDevice] = useState({});
-  
+  const [deviceStatus, setDeviceStatus] = useState({});
+
   const [newForm] = Form.useForm();
   const [updateForm] = Form.useForm();
 
@@ -90,7 +101,7 @@ const DeviceManager = () => {
         })
     }
 
-    if ( has(updateDevice, 'id') ) {
+    if (has(updateDevice, 'id')) {
       fetchData()
     }
   }, [updateDevice]);
@@ -120,6 +131,23 @@ const DeviceManager = () => {
       title: '视频信息',
       dataIndex: 'videoMessage',
       key: 'videoMessage'
+    },
+    {
+      title: '状态',
+      dataIndex: 'id',
+      key: 'status',
+      render: id => {
+        let status = null
+        let text = null
+
+        switch (get(deviceStatus, id, null)) {
+          case "0": status = "error"; text = "离线"; break;
+          case "1": status = "processing"; text = "在线"; break;
+          case "2": status = "success"; text = "运行"; break;
+          default: status = "error"; text = "离线"; break;
+        }
+        return (<Badge status={status} text={text} />)
+      }
     },
     {
       dataIndex: 'id',
@@ -235,12 +263,22 @@ const DeviceManager = () => {
                     "deviceId": id
                   }).then(v => {
                     if (v.code === 2000) {
-                      message.success("删除成功")
+                      message.success("设备删除成功")
                     } else {
-                      message.error("删除失败")
+                      message.error("设备删除失败")
                     }
                   })
 
+                  // 删除设备相应心跳
+                  await deleteERHeartbeat({
+                    "deviceId": id
+                  }).then(v => {
+                    if (v.code === 2000) {
+                      message.success("心跳删除成功")
+                    } else {
+                      message.error("心跳删除失败")
+                    }
+                  })
                 },
                 onCancel() {
                   message.warning("取消删除")
@@ -273,6 +311,26 @@ const DeviceManager = () => {
 
     fetchData()
   }, []);
+  useEffect(() => {
+    const getDeviceStatus = async (deviceInfoSource) => {
+      const deviceIds = []
+      deviceInfoSource.forEach(v => {
+        deviceIds.push(v.id)
+      })
+
+      await queryStatusMap({
+        "deviceIds": deviceIds
+      }).then( v => {
+        setDeviceStatus(v.data)
+      })
+    }
+
+    timer = window.setInterval(() => {
+      getDeviceStatus(deviceInfo)
+    }, 30000)
+
+    return () => { window.clearInterval(timer) }
+  }, [deviceInfo])
 
   // 请求模型列表
   const getModelList = async () => {
@@ -330,6 +388,21 @@ const DeviceManager = () => {
             message.success("注册设备成功")
           } else {
             message.error("注册设备失败")
+          }
+        })
+
+
+      const heartbeatTmp = {}
+      set(heartbeatTmp, 'deviceId', newDevice.id)
+      set(heartbeatTmp, 'type', "heartbeat")
+      set(heartbeatTmp, 'status', "0")
+      set(heartbeatTmp, 'timestamp', Date.parse(new Date()))
+      await createERHeartbeat(heartbeatTmp)
+        .then(v => {
+          if (v.code === 2000) {
+            message.success("注册心跳成功")
+          } else {
+            message.error("注册心跳失败")
           }
         })
     }
@@ -426,7 +499,13 @@ const DeviceManager = () => {
 
         {/* 设备列表 */}
         <Card>
-          <Table columns={columns} dataSource={deviceInfo} />
+          <Table
+            columns={columns}
+            dataSource={deviceInfo}
+            rowKey={(record) => {
+              return (record.id + Date.now()) // 在这里加上一个时间戳就可以了，刷新问题
+            }}
+          />
         </Card>
 
       </Space>

@@ -8,6 +8,14 @@ export async function createDevice(params) {
   })
 }
 
+// 增加设备相应心跳
+export async function createERHeartbeat(params) {
+  return request('/api/ERHeartbeat/create', {
+    method: 'POST',
+    data: params,
+  })
+}
+
 // 修改设备
 export async function modifyDevice(params) {
   return request('/api/EDevice/update', {
@@ -23,6 +31,14 @@ export async function queryDeviceList() {
   })
 }
 
+// 获取设备心跳
+export async function queryStatusMap(params) {
+  return request('/api/ERHeartbeat/getStatusMap', {
+    method: 'POST',
+    data: params,
+  })
+}
+
 // 删除设备
 export async function deleteDeviceById(params) {
   return request('/api/EDevice/delete', {
@@ -30,6 +46,15 @@ export async function deleteDeviceById(params) {
     params
   })
 }
+
+// 删除设备相应心跳
+export async function deleteERHeartbeat(params) {
+  return request('/api/ERHeartbeat/delete', {
+    method: 'DELETE',
+    params
+  })
+}
+
 
 // 获取模型列表
 export async function queryModelList() {

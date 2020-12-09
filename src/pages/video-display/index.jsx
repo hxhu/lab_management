@@ -113,7 +113,7 @@ const VideoDisplay = () => {
                         has(currentDevice, 'videoRtsp')
                             ? <iframe
                                 style={{ width: "100%", border: 0, height: "1000px" }}
-                                src="http://www.baidu.com"
+                                src="http://47.93.49.119:8080"
                                 scrolling="auto"
                             />
                             : <Result
@@ -131,7 +131,7 @@ const VideoDisplay = () => {
                         <Descriptions.Item label="名称">{get(currentDevice, 'emodelOutputVO.modelName', null)}</Descriptions.Item>
                         <Descriptions.Item label="描述">{get(currentDevice, 'emodelOutputVO.modelDesc', null)}</Descriptions.Item>
                         <Descriptions.Item label="模型地址">{get(currentDevice, 'emodelOutputVO.modelLocation', null)}</Descriptions.Item>
-                        <Descriptions.Item label="生成时间">{moment(get(currentDevice, 'emodelOutputVO.modelLocation', 0)).format('YYYY-MM-DD HH:mm:ss')}</Descriptions.Item>
+                        <Descriptions.Item label="生成时间">{moment(get(currentDevice, 'emodelOutputVO.createTime', 0)).format('YYYY-MM-DD HH:mm:ss')}</Descriptions.Item>
                     </Descriptions>
                 </Card>
 
