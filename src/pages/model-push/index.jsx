@@ -293,7 +293,6 @@ const ModelPush = () => {
         <Card>
           <Button type="primary" onClick={onPushModelPoints}>推送模型</Button>
         </Card>
-
       </Space>
 
     </PageContainer>

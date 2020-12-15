@@ -3,6 +3,7 @@ export default {
   'menu.device-manager': '设备管理',
   'menu.model-push': '模型推送',
   'menu.video-display': '结果展示',
+  'menu.log': '操作日志',
   'menu.more-blocks': '更多区块',
   'menu.home': '首页',
   'menu.admin': '管理页',

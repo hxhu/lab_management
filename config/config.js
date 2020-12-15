@@ -114,6 +114,12 @@ export default defineConfig({
               path: '/device-manager',
               component: './device-manager',
             },
+            {
+              name: 'log',
+              icon: 'calendar',
+              path: '/log',
+              component: './log',
+            },
             // {
             //   name: 'figure-display',
             //   icon: 'fund',

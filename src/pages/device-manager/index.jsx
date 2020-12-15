@@ -123,6 +123,12 @@ const DeviceManager = () => {
       key: 'deviceDesc'
     },
     {
+      title: '模型名',
+      dataIndex: 'emodelOutputVO',
+      key: 'emodelId',
+      render: emodel => get(emodel, "modelName", "")
+    },
+    {
       title: 'rtsp',
       dataIndex: 'videoRtsp',
       key: 'videoRtsp'
@@ -497,6 +503,9 @@ const DeviceManager = () => {
           </Modal>
         </Card>
 
+        {
+          console.log(deviceInfo)
+        }
         {/* 设备列表 */}
         <Card>
           <Table
