@@ -4,6 +4,7 @@ export default {
   'menu.model-push': '模型推送',
   'menu.video-display': '结果展示',
   'menu.log': '操作日志',
+  'menu.config-push': '配置推送',
   'menu.more-blocks': '更多区块',
   'menu.home': '首页',
   'menu.admin': '管理页',

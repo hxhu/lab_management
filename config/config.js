@@ -120,6 +120,12 @@ export default defineConfig({
               path: '/log',
               component: './log',
             },
+            {
+              name: 'config-push',
+              icon: 'calendar',
+              path: '/config-push',
+              component: './config-push',
+            },
             // {
             //   name: 'figure-display',
             //   icon: 'fund',
