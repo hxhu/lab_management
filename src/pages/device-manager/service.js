@@ -64,6 +64,14 @@ export async function queryModelList() {
 }
 
 
+// 删除文件
+export async function deleteFile(params) {
+  return request('/api/EDevice/deleteFile', {
+    method: 'POST',
+    params
+  })
+}
+
 
 
 export async function queryDeviceListByUserId(params) {

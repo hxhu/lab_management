@@ -122,7 +122,7 @@ export default defineConfig({
             },
             {
               name: 'config-push',
-              icon: 'calendar',
+              icon: 'file-text',
               path: '/config-push',
               component: './config-push',
             },

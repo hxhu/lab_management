@@ -15,8 +15,8 @@ export async function queryDeviceList() {
 }
 
 // 推送模型
-export async function pushModel(params) {
-  return request('/api/EModel/pushModel', {
+export async function pushFile(params) {
+  return request('/api/EFile/pushFile', {
     method: 'POST',
     data: params,
   });

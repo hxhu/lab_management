@@ -19,7 +19,7 @@ import { PageContainer, FooterToolbar } from '@ant-design/pro-layout';
 import { cloneDeep, get, set, has, includes } from 'lodash'
 import moment from 'moment'
 import ReactJson from 'react-json-view'
-import { queryFilelList, queryDeviceList, pushModel } from './service';
+import { queryFilelList, queryDeviceList, pushFile } from './service';
 
 const { Option } = Select;
 const { confirm } = Modal;
@@ -225,8 +225,8 @@ const ModelPush = () => {
         "fileId": currentFile.id,
         "type": "points"
       }
-      console.log(result)
-    //   setPushFileData(result)
+
+      setPushFileData(result)
   }
   // 推送模型 boardcast
   const onPushFileBoardcast = () => {
@@ -237,27 +237,27 @@ const ModelPush = () => {
 
       const result = {
         "deviceIds": devicePushIds,
-        "modelId": currentFile.id,
+        "fileId": currentFile.id,
         "type": "boardcast"
       }
-      console.log(result)
-      // setPushFileData(result)
-  }
-  // useEffect(() => {
-  //   const fetchData = async () => {
-  //     if (has(pushFileData, 'deviceIds')) {
-  //       await pushModel(pushFileData).then(v => {
-  //         if (v.code === 2000) {
-  //           message.success("推送模型成功")
-  //         } else {
-  //           message.error("推送模型失败")
-  //         }
-  //       })
-  //     }
-  //   }
 
-  //   fetchData()
-  // }, [pushFileData]);
+      setPushFileData(result)
+  }
+  useEffect(() => {
+    const fetchData = async () => {
+      if (has(pushFileData, 'deviceIds')) {
+        await pushFile(pushFileData).then(v => {
+          if (v.code === 2000) {
+            message.success("推送模型成功")
+          } else {
+            message.error("推送模型失败")
+          }
+        })
+      }
+    }
+
+    fetchData()
+  }, [pushFileData]);
 
   const tailLayout = {
     wrapperCol: { offset: 8, span: 16 },

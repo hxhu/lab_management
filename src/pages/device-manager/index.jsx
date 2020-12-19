@@ -11,12 +11,13 @@ import {
   Table,
   Modal,
   message,
-  Input
+  Input,
+  Divider
 } from 'antd';
 import React, { useState, useEffect } from 'react';
 import { PageContainer, FooterToolbar } from '@ant-design/pro-layout';
 
-import { cloneDeep, get, set, has, unset } from 'lodash'
+import { cloneDeep, get, set, has, unset, includes } from 'lodash'
 import moment from 'moment'
 import ReactJson from 'react-json-view'
 import {
@@ -27,7 +28,8 @@ import {
   modifyDevice,
   createERHeartbeat,
   deleteERHeartbeat,
-  queryStatusMap
+  queryStatusMap,
+  deleteFile
 } from './service';
 
 const { Option } = Select;
@@ -45,22 +47,28 @@ const layout = {
 const DeviceManager = () => {
   const [modelOptions, setModelOptions] = useState([]);
   const [deviceInfo, setDeviceInfo] = useState([]);
+  const [deviceInfoFlag, setDeviceInfoFlag] = useState(false);
+
   const [newVisible, setNewVisible] = useState(false);
   const [updateVisible, setUpdateVisible] = useState(false);
   const [newDevice, setNewDevice] = useState({});
   const [updateDevice, setUpdateDevice] = useState({});
+
   const [deviceStatus, setDeviceStatus] = useState({});
+  const [updateFlag, setUpdateFlag] = useState(false);
+  const [deleteFileParams, setDeleteFileParams] = useState({});
 
   const [newForm] = Form.useForm();
   const [updateForm] = Form.useForm();
 
   // 新建设备相关
   const onNewDeviceCancel = () => {
+    newForm.resetFields();
     setNewVisible(false)
   }
-
   // 修改设备相关
   const onUpdateDeviceCancel = () => {
+    updateForm.resetFields();
     setUpdateVisible(false)
   }
 
@@ -86,6 +94,7 @@ const DeviceManager = () => {
       set(updateDeviceTmp, 'videoRtsp', values.videoRtsp)
     }
 
+    setUpdateFlag(true)
     setUpdateDevice(updateDeviceTmp)
     setUpdateVisible(false)
   }
@@ -99,12 +108,76 @@ const DeviceManager = () => {
             message.error("修改设备失败")
           }
         })
+
+      if (get(deleteFileParams, "deviceId", "") === updateDevice.id) {
+        await deleteFile(deleteFileParams)
+          .then(v => {
+            if (v.code === 2000) {
+              message.success("删除文件成功")
+            } else {
+              message.error("删除文件失败")
+            }
+          })
+      } else {
+        setDeleteFileParams({})
+      }
+
+      setUpdateFlag(false)
+      setDeviceInfoFlag(!deviceInfoFlag)
     }
 
-    if (has(updateDevice, 'id')) {
+    if (has(updateDevice, 'id') && updateFlag) {
       fetchData()
     }
+
+    if (has(updateDevice, 'id') && !updateFlag) {
+      const currentConfigsTmp = []
+      get(updateDevice, "currentFileSet", []).forEach(v => {
+        currentConfigsTmp.push(`${v.fileName}-${v.id}`)
+      })
+
+      // setCurrentConfigs(currentConfigsTmp)
+      updateForm.setFieldsValue({
+        ...updateDevice,
+        fileIds: currentConfigsTmp
+      })
+      setUpdateVisible(true)
+    }
   }, [updateDevice]);
+
+
+  // 修改文件相关
+  const onFileChange = value => {
+    const nowFileIds = []
+    value.forEach(v => {
+      const tmp = v.split("-")
+      if (has(tmp, "1")) {
+        nowFileIds.push(get(tmp, "1"))
+      }
+
+    })
+
+    const allFileIds = []
+    get(updateDevice, "currentFileSet", []).forEach(v => {
+      allFileIds.push(v.id)
+    })
+
+    const deleteFileIds = []
+    allFileIds.forEach(v => {
+      if (!includes(nowFileIds, v)) {
+        deleteFileIds.push(v)
+      }
+    })
+
+    const params = {
+      deviceId: updateDevice.id,
+      fileIds: deleteFileIds
+    }
+
+    setDeleteFileParams(params)
+
+  }
+
 
   const columns = [
     {
@@ -165,14 +238,15 @@ const DeviceManager = () => {
             type="primary"
             onClick={() => {
               let updateDeviceTmp = {}
-              deviceInfo.forEach(v => {
+              const deviceInfoTmp = cloneDeep(deviceInfo)
+              deviceInfoTmp.forEach(v => {
                 if (v.id === id) {
                   updateDeviceTmp = v
                 }
               })
+
               unset(updateDeviceTmp, 'emodelOutputVO')
               setUpdateDevice(updateDeviceTmp)
-              setUpdateVisible(true)
             }}
           >
             修改
@@ -186,10 +260,9 @@ const DeviceManager = () => {
             <Form
               {...layout}
               form={updateForm}
-              initialValues={{ remember: true }}
               onFinish={onUpdateFinish}
               labelAlign="right"
-              initialValues={updateDevice}
+              // initialValues={updateDevice}
               colon={false}
             >
               {/* ID */}
@@ -247,6 +320,23 @@ const DeviceManager = () => {
                   {modelOptions}
                 </Select>
               </Form.Item>
+
+              <Divider />
+
+              <Form.Item
+                label="配置文件"
+                name="fileIds"
+                initialValue={null}
+              >
+                <Select
+                  mode="multiple"
+                  onChange={onFileChange}
+                  allowClear
+                >
+                  {null}
+                </Select>
+              </Form.Item>
+
 
               <Form.Item {...tailLayout}>
                 <Button type="primary" htmlType="submit">修改</Button>
@@ -316,7 +406,7 @@ const DeviceManager = () => {
     }
 
     fetchData()
-  }, []);
+  }, [deviceInfoFlag]);
   useEffect(() => {
     const getDeviceStatus = async (deviceInfoSource) => {
       const deviceIds = []
@@ -326,7 +416,7 @@ const DeviceManager = () => {
 
       await queryStatusMap({
         "deviceIds": deviceIds
-      }).then( v => {
+      }).then(v => {
         setDeviceStatus(v.data)
       })
     }
@@ -411,6 +501,7 @@ const DeviceManager = () => {
             message.error("注册心跳失败")
           }
         })
+      setDeviceInfoFlag(!deviceInfoFlag)
     }
 
     if (has(newDevice, 'id')) {
@@ -422,7 +513,7 @@ const DeviceManager = () => {
   return (
     <PageContainer>
       <Space direction="vertical" style={{ width: "100%" }}>
-        {/* 推送模型 */}
+        {/* 设备新建 */}
         <Card>
           <Button type="primary" onClick={() => setNewVisible(true)}>注册设备</Button>
           <Modal
@@ -503,9 +594,6 @@ const DeviceManager = () => {
           </Modal>
         </Card>
 
-        {
-          console.log(deviceInfo)
-        }
         {/* 设备列表 */}
         <Card>
           <Table
