@@ -126,6 +126,12 @@ export default defineConfig({
               path: '/config-push',
               component: './config-push',
             },
+            {
+              name: 'dataset-manager',
+              icon: 'file-text',
+              path: '/dataset-manager',
+              component: './dataset-manager',
+            },
             // {
             //   name: 'figure-display',
             //   icon: 'fund',
