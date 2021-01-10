@@ -128,16 +128,17 @@ export default defineConfig({
             },
             {
               name: 'dataset-manager',
-              icon: 'file-text',
+              icon: 'database',
               path: '/dataset-manager',
               component: './dataset-manager',
             },
-            // {
-            //   name: 'figure-display',
-            //   icon: 'fund',
-            //   path: '/figure-display',
-            //   component: './figure-display',
-            // },
+            {
+              name: 'data-upload',
+              icon: 'cloud-upload',
+              path: '/data-upload/:page',
+              component: './data-upload',
+              hideInMenu: true
+            },
             // {
             //   name: 'picture-display',
             //   icon: 'picture',

@@ -1,225 +1,345 @@
-import { InboxOutlined } from '@ant-design/icons';
+import { PlusOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
+import { Link } from 'umi';
 import {
     Button,
+    Badge,
     Card,
     Space,
     Row,
     Col,
     Form,
+    Select,
+    Table,
+    Modal,
     message,
-    Upload,
-    List,
-    Typography,
-    Descriptions
+    Input
 } from 'antd';
 import React, { useState, useEffect } from 'react';
-import { PageContainer} from '@ant-design/pro-layout';
-
-import { cloneDeep, get, includes } from 'lodash'
+import { PageContainer, FooterToolbar } from '@ant-design/pro-layout';
+import { cloneDeep, get, set, has, unset, includes } from 'lodash'
 import moment from 'moment'
-import { queryDataSet, uploadImageSet } from './service';
+import ReactJson from 'react-json-view'
+import {
+    queryDataSetList,
+    deleteDataSetById,
+    createDataSet,
+    modifyDataSet
+} from './service';
 
-const { Dragger } = Upload;
+const { Option } = Select;
+const { confirm } = Modal;
 
+const tailLayout = {
+    wrapperCol: { offset: 8, span: 16 },
+};
 const layout = {
     labelCol: { span: 8 },
     wrapperCol: { span: 16 },
 };
-const tailLayout = {
-    wrapperCol: { offset: 8, span: 16 },
-};
 
-const DatasetManager = () => {
-    const [currentDataSetId, setCurrentDataSetId] = useState("N1343852476926791680");
-    const [currentDataSet, setCurrentDataSet] = useState({ "id": "" });
-    const [currentImage, setCurrentImage] = useState([]);
-    const [currentAnnotation, setCurrentAnnotation] = useState([]);
-    const [currentDiff, setCurrentDiff] = useState([]);
-    const [currentCommit, setCurrentCommit] = useState([]);
-    const [form] = Form.useForm();
+const DeviceManager = () => {
+    const [dataSet, setDataSet] = useState([]);
+    const [dataSetFlag, setDataSetFlag] = useState(false);
+    const [newVisible, setNewVisible] = useState(false);
+    const [updateVisible, setUpdateVisible] = useState(false);
+    const [updateDataSet, setUpdateDataSet] = useState({});
 
-    // 数据上传配置
-    const draggerPropsJPG = {
-        name: 'avatar',
-        multiple: true,
-        // action: 'https://www.mocky.io/v2/5cc8019d300000980a055e76',
-        action: `/api/EDataSet/uploadImage/${currentDataSet.id}`,
-        onChange(info) {
-            const { status } = info.file;
-            if (status !== 'uploading') {
-                if (get(info, "file.response.code", 5000) === 2000) {
-                    const name = info.file.name.split(".")[0]
-                    if (!includes(currentImage, name)) {
-                        const tmp = cloneDeep(currentImage)
-                        tmp.push(name)
-                        setCurrentImage(tmp)
-                    }
+    const [newForm] = Form.useForm();
+    const [updateForm] = Form.useForm();
+
+    // 修改数据集相关
+    const onUpdateDataSetCancel = () => {
+        updateForm.resetFields();
+        setUpdateVisible(false)
+    }
+    const onUpdateFinish = async (values) => {
+        await modifyDataSet(values)
+            .then(v => {
+                if (v.code === 2000) {
+                    message.success("修改数据集成功")
+                    setDataSetFlag(!dataSetFlag)
+                } else {
+                    message.error("修改数据集失败")
                 }
-            }
-            if (status === 'done') {
-                message.success(`${info.file.name} 图片上传成功.`);
-            } else if (status === 'error') {
-                message.error(`${info.file.name} 图片上传失败.`);
-            }
-        },
-    };
-    const draggerPropsXML = {
-        name: 'avatar',
-        multiple: true,
-        // action: 'https://www.mocky.io/v2/5cc8019d300000980a055e76',
-        action: `/api/EDataSet/uploadAnnotation/${currentDataSet.id}`,
-        onChange(info) {
-            const { status } = info.file;
-            if (status !== 'uploading') {
-                if (get(info, "file.response.code", 5000) === 2000) {
-                    const name = info.file.name.split(".")[0]
-                    if (!includes(currentAnnotation, name)) {
-                        const tmp = cloneDeep(currentAnnotation)
-                        tmp.push(name)
-                        setCurrentAnnotation(tmp)
-                    }
-                }
-            }
-            if (status === 'done') {
-                message.success(`${info.file.name} 标注文件上传成功.`);
-            } else if (status === 'error') {
-                message.error(`${info.file.name} 标注文件上传失败.`);
-            }
-        },
-    };
-    // 得到不匹配数据
+                setUpdateVisible(false)
+            })
+    }
+    const onUpdateReset = () => {
+        updateForm.resetFields();
+    }
     useEffect(() => {
-        const currentDiffTmp = []
-        const currentCommitTmp = []
-        // Image不匹配
-        currentImage.forEach(v => {
-            if (!includes(currentAnnotation, v)) {
-                currentDiffTmp.push({ name: v, type: "图片" })
-            } else {
-                currentCommitTmp.push(v)
-            }
-        })
+        if (has(updateDataSet, 'id')) {
+            updateForm.setFieldsValue(updateDataSet)
+            setUpdateVisible(true)
+        }
+    }, [updateDataSet]);
 
-        // Annotation不匹配
-        currentAnnotation.forEach(v => {
-            if (!includes(currentImage, v)) {
-                currentDiffTmp.push({ name: v, type: "标注" })
-            }
-        })
+    const columns = [
+        {
+            title: 'ID',
+            dataIndex: 'id',
+            key: 'id'
+        },
+        {
+            title: '数据集名',
+            dataIndex: 'dataSetName',
+            key: 'dataSetName'
+        },
+        {
+            title: '数据集描述',
+            dataIndex: 'dataSetDesc',
+            key: 'dataSetDesc'
+        },
+        {
+            title: '创建时间',
+            dataIndex: 'createTime',
+            key: 'createTime',
+            render: v => moment(v === null ? 0 : v).format('YYYY-MM-DD HH:mm:ss')
+        },
+        {
+            title: '更新时间',
+            dataIndex: 'updateTime',
+            key: 'updateTime',
+            render: v => moment(v === null ? 0 : v).format('YYYY-MM-DD HH:mm:ss')
+        },
+        {
+            title: '类型',
+            dataIndex: 'type',
+            key: 'type'
+        },
+        {
+            title: '操作',
+            dataIndex: 'id',
+            key: 'action',
+            render: id => (
+                <Space>
+                    {/* 修改按钮 */}
+                    <Button
+                        type="primary"
+                        onClick={() => {
+                            let updateDataSetTmp = {}
+                            const dataSetTmp = cloneDeep(dataSet)
+                            dataSetTmp.forEach(v => {
+                                if (v.id === id) {
+                                    updateDataSetTmp = v
+                                }
+                            })
 
-        setCurrentDiff(currentDiffTmp)
-        setCurrentCommit(currentCommitTmp)
+                            setUpdateVisible(true)
+                            setUpdateDataSet(updateDataSetTmp)
+                        }}
+                    >
+                        修改
+                    </Button>
+                    <Modal
+                        title="修改设备"
+                        visible={updateVisible}
+                        onCancel={onUpdateDataSetCancel}
+                        footer={null}
+                    >
+                        <Form
+                            {...layout}
+                            form={updateForm}
+                            onFinish={onUpdateFinish}
+                            labelAlign="right"
+                            // initialValues={updateDevice}
+                            colon={false}
+                        >
+                            {/* ID */}
+                            <Form.Item
+                                label="ID"
+                                name="id"
+                                rules={[{ required: true, message: '请输入ID!' }]}
+                            >
+                                <Input disabled />
+                            </Form.Item>
 
-    }, [currentImage, currentAnnotation])
+                            {/* dataSetName */}
+                            <Form.Item
+                                label="数据集名"
+                                name="dataSetName"
+                                rules={[{ required: true, message: '请输入数据集名!' }]}
+                            >
+                                <Input />
+                            </Form.Item>
 
+                            {/* dataSetDesc */}
+                            <Form.Item
+                                label="数据集信息"
+                                name="dataSetDesc"
+                                initialValue={null}
+                            >
+                                <Input />
+                            </Form.Item>
 
-    // 获取数据集信息
-    const getDataSet = async (params) => {
+                            <Form.Item {...tailLayout}>
+                                <Button type="primary" htmlType="submit">修改</Button>
+                                <Button htmlType="button" onClick={onUpdateReset}>清空</Button>
+                            </Form.Item>
+                        </Form>
+                    </Modal>
+
+                    {/* 删除按钮 */}
+                    <Button
+                        type="dashed"
+                        onClick={() => {
+                            confirm({
+                                title: '确认删除该数据集？',
+                                icon: <ExclamationCircleOutlined />,
+                                content: `数据集ID: ${id}`,
+                                async onOk() {
+                                    // 删除设备
+                                    await deleteDataSetById({
+                                        "dataSetId": id
+                                    }).then(v => {
+                                        if (v.code === 2000) {
+                                            message.success("数据集删除成功")
+                                            setDataSetFlag(!dataSetFlag)
+                                        } else {
+                                            message.error("数据集删除失败")
+                                        }
+                                    })
+                                },
+                                onCancel() {
+                                    message.warning("取消删除")
+                                },
+                            })
+                        }}
+                        danger
+                    >
+                        删除
+                    </Button>
+
+                    {/* 上传数据 */}
+                    <Link to={`/data-upload/${id}`} >上传数据</Link>
+                </Space>
+            ),
+        },
+    ];
+
+    // 请求数据集
+    const getDataSetList = async () => {
         try {
-            return await queryDataSet(params).then(rst => rst.data)
+            return await queryDataSetList()
+                .then(rst => rst.data)
         } catch (error) {
-            message.error('请求数据集信息出错');
+            message.error('请求数据集列表出错');
         }
     }
     useEffect(() => {
         const fetchData = async () => {
-            const currentDataSetTmp = await getDataSet({ dataSetId: currentDataSetId })
-            setCurrentDataSet(currentDataSetTmp)
+            const dataSetTmp = await getDataSetList()
+            setDataSet(dataSetTmp)
         }
 
         fetchData()
-    }, []);
+    }, [dataSetFlag]);
 
-    const onFinish = async () => {
-        await uploadImageSet({ nameList: currentCommit, dataSetId: currentDataSetId })
+
+    // 新建数据集相关
+    const onNewDataSetCancel = () => {
+        newForm.resetFields();
+        setNewVisible(false)
+    }
+    const onNewReset = () => {
+        newForm.resetFields();
+    }
+    const onNewFinish = async (values) => {
+        const dataSetTmp = {}
+
+        set(dataSetTmp, 'dataSetName', values.dataSetName)
+        if (values.dataSetDesc !== null) {
+            set(dataSetTmp, 'dataSetDesc', values.dataSetDesc)
+        }
+        set(dataSetTmp, 'type', values.type)
+
+
+        await createDataSet(dataSetTmp)
             .then(v => {
                 if (v.code === 2000) {
-                    message.success("上传成功")
+                    message.success("新建数据集成功")
+                    setDataSetFlag(!dataSetFlag)
                 } else {
-                    message.error("上传失败")
+                    message.error("新建数据集失败")
                 }
+                setNewVisible(false)
             })
     }
-    const onCancel = () => {
 
-    }
 
     return (
         <PageContainer>
             <Space direction="vertical" style={{ width: "100%" }}>
-                {/* 数据集信息 */}
+                {/* 数据集新建 */}
                 <Card>
-                    <Descriptions title="数据集信息" bordered>
-                        <Descriptions.Item label="名称">{get(currentDataSet, 'dataSetName', null)}</Descriptions.Item>
-                        <Descriptions.Item label="描述">{get(currentDataSet, 'dataDesc', null)}</Descriptions.Item>
-                        <Descriptions.Item label="生成时间">{moment(get(currentDataSet, 'createTime', 0)).format('YYYY-MM-DD HH:mm:ss')}</Descriptions.Item>
-                        <Descriptions.Item label="更新时间">{moment(get(currentDataSet, 'updateTime', 0)).format('YYYY-MM-DD HH:mm:ss')}</Descriptions.Item>
-                    </Descriptions>
+                    <Button type="primary" onClick={() => setNewVisible(true)}>新建数据集</Button>
+                    <Modal
+                        title="新建数据集"
+                        visible={newVisible}
+                        onCancel={onNewDataSetCancel}
+                        footer={null}
+                    >
+                        <Form
+                            {...layout}
+                            form={newForm}
+                            initialValues={{ remember: true }}
+                            onFinish={onNewFinish}
+                            labelAlign="right"
+                            colon={false}
+                        >
+                            {/* dataSetName */}
+                            <Form.Item
+                                label="数据集名"
+                                name="dataSetName"
+                                rules={[{ required: true, message: '请输入数据集名!' }]}
+                            >
+                                <Input />
+                            </Form.Item>
+
+                            {/* dataSetDesc */}
+                            <Form.Item
+                                label="设数据集描述"
+                                name="dataSetDesc"
+                                initialValue={null}
+                            >
+                                <Input />
+                            </Form.Item>
+
+                            {/* type */}
+                            <Form.Item
+                                label="类型"
+                                name="type"
+                                initialValue="ssd"
+                                rules={[{ required: true, message: '请选择数据集类型!' }]}
+                            >
+                                <Select>
+                                    <Option value="ssd">ssd</Option>
+                                    <Option value="yolo">yolo</Option>
+                                </Select>
+                            </Form.Item>
+
+                            <Form.Item {...tailLayout}>
+                                <Button type="primary" htmlType="submit">注册</Button>
+                                <Button htmlType="button" onClick={onNewReset}>清空</Button>
+                            </Form.Item>
+                        </Form>
+                    </Modal>
                 </Card>
 
-                {/* 源图片上传 */}
-                <Card title="源图片上传">
-                    <Dragger {...draggerPropsJPG}>
-                        <p className="ant-upload-drag-icon">
-                            <InboxOutlined />
-                        </p>
-                        <p className="ant-upload-text">点击上传源图片</p>
-                        <p className="ant-upload-hint">把文件拖入指定区域，完成上传，同样支持点击上传。</p>
-                    </Dragger>
-                </Card>
-
-                {/* 标注文件上传 */}
-                <Card title="标注文件上传">
-                    <Dragger {...draggerPropsXML}>
-                        <p className="ant-upload-drag-icon">
-                            <InboxOutlined />
-                        </p>
-                        <p className="ant-upload-text">点击上传标注文件</p>
-                        <p className="ant-upload-hint">把文件拖入指定区域，完成上传，同样支持点击上传。</p>
-                    </Dragger>
-                </Card>
-
-                {/* 数据集验证信息 */}
-                <Card title="数据集未匹配信息">
-                    <List
-                        bordered
-                        dataSource={currentDiff}
-                        renderItem={item => (
-                            <List.Item>
-                                {/* 某个文件没有匹配 */}
-                                <Typography.Text mark>{item.type}</Typography.Text>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{item.name}
-                            </List.Item>
-                        )}
+                {/* 数据集列表 */}
+                <Card>
+                    <Table
+                        columns={columns}
+                        dataSource={dataSet}
+                        rowKey={(record) => {
+                            return (record.id + Date.now()) // 在这里加上一个时间戳就可以了，刷新问题
+                        }}
                     />
                 </Card>
 
-                {/* 提交信息 */}
-                <Card>
-                    <Row>
-                        <Col span={8} />
-                        <Col span={10} >
-                            <Form
-                                {...layout}
-                                form={form}
-                                initialValues={{ remember: true }}
-                                onFinish={onFinish}
-                                labelAlign="right"
-                                colon={false}
-                            >
-                                <Form.Item {...tailLayout}>
-                                    <Button type="primary" htmlType="submit">提交</Button>
-                                    <Button htmlType="button" onClick={onCancel}>取消</Button>
-                                </Form.Item>
-                            </Form>
-                        </Col>
-                        <Col span={6} />
-                    </Row>
-                </Card>
-
             </Space>
-
         </PageContainer>
     );
 };
 
-export default DatasetManager;
+export default DeviceManager;

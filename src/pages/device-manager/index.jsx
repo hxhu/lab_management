@@ -229,6 +229,7 @@ const DeviceManager = () => {
       }
     },
     {
+      title: '操作',
       dataIndex: 'id',
       key: 'action',
       render: id => (
