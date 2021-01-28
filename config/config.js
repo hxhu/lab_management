@@ -139,6 +139,12 @@ export default defineConfig({
               component: './data-upload',
               hideInMenu: true
             },
+            {
+              name: 'model-train',
+              icon: 'field-time',
+              path: '/model-train',
+              component: './model-train'
+            },
             // {
             //   name: 'picture-display',
             //   icon: 'picture',

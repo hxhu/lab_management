@@ -1,4 +1,4 @@
-import { PlusOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
+import { InboxOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
 import {
   Button,
   Badge,
@@ -12,10 +12,11 @@ import {
   Modal,
   message,
   Input,
-  Divider
+  Divider,
+  Upload,
 } from 'antd';
 import React, { useState, useEffect } from 'react';
-import { PageContainer, FooterToolbar } from '@ant-design/pro-layout';
+import { PageContainer } from '@ant-design/pro-layout';
 
 import { cloneDeep, get, set, has, unset, includes } from 'lodash'
 import moment from 'moment'
@@ -34,6 +35,7 @@ import {
 
 const { Option } = Select;
 const { confirm } = Modal;
+const { Dragger } = Upload;
 let timer = null;
 
 const tailLayout = {
@@ -511,6 +513,31 @@ const DeviceManager = () => {
   }, [newDevice]);
 
 
+  const draggerPropsCSV = {
+    name: 'avatar',
+    multiple: true,
+    // action: 'https://www.mocky.io/v2/5cc8019d300000980a055e76',
+    action: `/api/EDevice/createDevices`,
+    onChange(info) {
+      const { status } = info.file;
+      if (status !== 'uploading') {
+        if (get(info, "file.response.code", 5000) === 2000) {
+          // const name = info.file.name.split(".")[0]
+          // if (!includes(currentAnnotation, name)) {
+          //     const tmp = cloneDeep(currentAnnotation)
+          //     tmp.push(name)
+          //     setCurrentAnnotation(tmp)
+          // }
+        }
+      }
+      if (status === 'done') {
+        message.success(`${info.file.name} 批量注册文件上传成功.`);
+      } else if (status === 'error') {
+        message.error(`${info.file.name} 批量注册文件上传失败.`);
+      }
+    },
+  };
+
   return (
     <PageContainer>
       <Space direction="vertical" style={{ width: "100%" }}>
@@ -593,6 +620,17 @@ const DeviceManager = () => {
               </Form.Item>
             </Form>
           </Modal>
+        </Card>
+
+        {/* 批量注册 */}
+        <Card title="批量注册">
+          <Dragger {...draggerPropsCSV}>
+            <p className="ant-upload-drag-icon">
+              <InboxOutlined />
+            </p>
+            <p className="ant-upload-text">点击上传批量注册文件</p>
+            <p className="ant-upload-hint">把文件拖入指定区域，完成上传，同样支持点击上传。</p>
+          </Dragger>
         </Card>
 
         {/* 设备列表 */}

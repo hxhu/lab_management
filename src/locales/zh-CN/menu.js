@@ -7,6 +7,7 @@ export default {
   'menu.config-push': '配置推送',
   'menu.dataset-manager': '数据集管理',
   'menu.data-upload': '数据上传',
+  'menu.model-train': '模型训练',
   'menu.more-blocks': '更多区块',
   'menu.home': '首页',
   'menu.admin': '管理页',
