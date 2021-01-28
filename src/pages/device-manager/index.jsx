@@ -522,12 +522,7 @@ const DeviceManager = () => {
       const { status } = info.file;
       if (status !== 'uploading') {
         if (get(info, "file.response.code", 5000) === 2000) {
-          // const name = info.file.name.split(".")[0]
-          // if (!includes(currentAnnotation, name)) {
-          //     const tmp = cloneDeep(currentAnnotation)
-          //     tmp.push(name)
-          //     setCurrentAnnotation(tmp)
-          // }
+          setDeviceInfoFlag(!deviceInfoFlag)
         }
       }
       if (status === 'done') {
