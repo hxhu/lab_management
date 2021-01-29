@@ -15,3 +15,11 @@ export async function prepareEnvironment(params) {
         params
     });
 }
+
+// 训练损失
+export async function getTrainingLoss(params) {
+    return request('/api/ECase/getTrainingLoss', {
+        method: 'GET',
+        params
+    });
+}

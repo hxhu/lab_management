@@ -15,31 +15,17 @@ import {
 } from 'antd';
 import React, { useState, useRef, useEffect } from 'react';
 import { PageContainer, FooterToolbar } from '@ant-design/pro-layout';
+import { Line } from '@ant-design/charts';
 import { cloneDeep, get, set, has } from 'lodash'
 import moment from 'moment'
 import ReactJson from 'react-json-view'
-import { chooseDataSet, prepareEnvironment, pushModel } from './service';
+import { chooseDataSet, prepareEnvironment, getTrainingLoss } from './service';
 
 const { Dragger } = Upload;
 const { Option } = Select;
 
-const testProps = {
-    name: 'testPic',
-    action: 'https://www.mocky.io/v2/5cc8019d300000980a055e76',
-    onChange(info) {
-        const { status } = info.file;
-        if (status !== 'uploading') {
-            console.log(info.file, info.fileList);
-        }
-        if (status === 'done') {
-            message.success(`${info.file.name} file uploaded successfully.`);
-        } else if (status === 'error') {
-            message.error(`${info.file.name} file upload failed.`);
-        }
-    },
-};
-
 const ModelTrain = () => {
+    const [lossData, setLossData] = useState([]);
     const [caseId, setCaseId] = useState("N1343496694641201152");
     const [dataSetInfo, setDataSetInfo] = useState([]);
     const [dataSetOptions, setDataSetOptions] = useState([]);
@@ -47,6 +33,22 @@ const ModelTrain = () => {
 
     const [envLoading, setEnvLoading] = useState(false);
     const [trainingFlag, setTrainFlag] = useState(false);
+
+    const testProps = {
+        name: 'avatar',
+        action: `/api/ECase/testModel/${caseId}/1`,
+        onChange(info) {
+            const { status } = info.file;
+            if (status !== 'uploading') {
+                console.log(info.file, info.fileList);
+            }
+            if (status === 'done') {
+                message.success(`${info.file.name} file uploaded successfully.`);
+            } else if (status === 'error') {
+                message.error(`${info.file.name} file upload failed.`);
+            }
+        },
+    };
 
     // 数据集选择
     useEffect(() => {
@@ -92,6 +94,22 @@ const ModelTrain = () => {
         }
     }
 
+    // 训练损失
+    const config = {
+        data: lossData,
+        padding: 'auto',
+        xField: 'iterator',
+        yField: 'loss',
+    };
+    const trainLoss = async () => {
+        await getTrainingLoss({
+            caseId,
+            status: 9
+        }).then(v => {
+            setLossData(v.data)
+        })
+    }
+
     return (
         <PageContainer>
             <Space direction="vertical" style={{ width: "100%" }}>
@@ -135,12 +153,9 @@ const ModelTrain = () => {
                     </Descriptions>
                 </Card>
 
-                {/* 5. 训练结果 */}
-                <Card title="5. 训练结果">
-                    <Image
-                        width={200}
-                        src="https://zos.alipayobjects.com/rmsportal/jkjgkEfvpUPVyRjUImniVslZfWPnJuuZ.png"
-                    />
+                {/* 5. 训练损失 */}
+                <Card title="5. 训练损失" extra={<Button type="primary" onClick={ () => trainLoss() }>刷新</Button>} >
+                    <Line {...config} />
                 </Card>
 
                 {/* 6. 模型测试 */}
