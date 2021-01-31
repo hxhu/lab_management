@@ -6,8 +6,7 @@ import {
     Descriptions,
     Card,
     Space,
-    Row,
-    Col,
+    Badge,
     Upload,
     Select,
     Image,
@@ -19,17 +18,19 @@ import { Line } from '@ant-design/charts';
 import { cloneDeep, get, set, has } from 'lodash'
 import moment from 'moment'
 import ReactJson from 'react-json-view'
-import { chooseDataSet, prepareEnvironment, getTrainingLoss } from './service';
+import { chooseDataSet, prepareEnvironment, getTrainingLoss, getTestResult, getTrainingCondition } from './service';
 
 const { Dragger } = Upload;
 const { Option } = Select;
 
 const ModelTrain = () => {
     const [lossData, setLossData] = useState([]);
+    const [curTrainCondition, setCurTrainCondition] = useState({});
     const [caseId, setCaseId] = useState("N1343496694641201152");
     const [dataSetInfo, setDataSetInfo] = useState([]);
     const [dataSetOptions, setDataSetOptions] = useState([]);
     const [flagList, setFlagList] = useState([false, false, false, false, false, false, false]);
+    const [testUrl, setTestUrl] = useState("https://zos.alipayobjects.com/rmsportal/jkjgkEfvpUPVyRjUImniVslZfWPnJuuZ.png");
 
     const [envLoading, setEnvLoading] = useState(false);
     const [trainingFlag, setTrainFlag] = useState(false);
@@ -94,6 +95,16 @@ const ModelTrain = () => {
         }
     }
 
+    // 训练情况
+    const trainCondition = async () => {
+        await getTrainingCondition({
+            caseId,
+            status: 9
+        }).then(v => {
+            setCurTrainCondition(v.data)
+        })
+    }
+
     // 训练损失
     const config = {
         data: lossData,
@@ -107,6 +118,16 @@ const ModelTrain = () => {
             status: 9
         }).then(v => {
             setLossData(v.data)
+        })
+    }
+
+    // 测试结果
+    const testResult = async () => {
+        await getTestResult({
+            caseId,
+            status: 9
+        }).then(v => {
+            setTestUrl(v.data)
         })
     }
 
@@ -144,17 +165,27 @@ const ModelTrain = () => {
                 </Card>
 
                 {/* 4. 训练情况 */}
-                <Card title="4. 训练情况">
+                <Card title="4. 训练情况" extra={<Button type="primary" onClick={() => trainCondition()}>刷新</Button>}>
                     <Descriptions bordered>
-                        <Descriptions.Item label="当前迭代次数">Cloud Database</Descriptions.Item>
-                        <Descriptions.Item label="最大迭代次数">Prepaid</Descriptions.Item>
-                        <Descriptions.Item label="当前准确率">YES</Descriptions.Item>
-                        <Descriptions.Item label="运行状态">2018-04-24 18:00:00</Descriptions.Item>
+                        <Descriptions.Item label="当前迭代次数">{get(curTrainCondition, 'currentIteratorTimes', 0)}</Descriptions.Item>
+                        <Descriptions.Item label="最大迭代次数">{get(curTrainCondition, 'maxIteratorTimes', 0)}</Descriptions.Item>
+                        <Descriptions.Item label="当前准确率">{get(curTrainCondition, 'currentAccuracy', 0.0)}</Descriptions.Item>
+                        <Descriptions.Item label="运行状态">
+                            {
+                                get(curTrainCondition, 'status', "null") === "success"
+                                    ? <Badge status="success" text="完成"/>
+                                    : get(curTrainCondition, 'status', "null") === "running"
+                                        ? <Badge status="processing" text="运行"/>
+                                        : get(curTrainCondition, 'status', "null") === "error"
+                                            ? <Badge status="error" text="错误"/>
+                                            : <Badge status="default" text="未开始"/>
+                            }
+                        </Descriptions.Item>
                     </Descriptions>
                 </Card>
 
                 {/* 5. 训练损失 */}
-                <Card title="5. 训练损失" extra={<Button type="primary" onClick={ () => trainLoss() }>刷新</Button>} >
+                <Card title="5. 训练损失" extra={<Button type="primary" onClick={() => trainLoss()}>刷新</Button>} >
                     <Line {...config} />
                 </Card>
 
@@ -170,10 +201,10 @@ const ModelTrain = () => {
                 </Card>
 
                 {/* 7. 测试结果 */}
-                <Card title="7. 测试结果">
+                <Card title="7. 测试结果" extra={<Button type="primary" onClick={() => testResult()}>刷新</Button>}>
                     <Image
-                        width={200}
-                        src="https://zos.alipayobjects.com/rmsportal/jkjgkEfvpUPVyRjUImniVslZfWPnJuuZ.png"
+                        width={500}
+                        src={testUrl + "?=" + Math.random()}
                     />
                 </Card>
 
