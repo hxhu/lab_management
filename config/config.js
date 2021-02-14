@@ -145,12 +145,12 @@ export default defineConfig({
               path: '/model-train',
               component: './model-train'
             },
-            // {
-            //   name: 'picture-display',
-            //   icon: 'picture',
-            //   path: '/picture-display',
-            //   component: './picture-display',
-            // },
+            {
+              name: 'config-update',
+              icon: 'copyright',
+              path: '/config-update',
+              component: './config-update',
+            },
             // {
             //   name: 'video-display',
             //   icon: 'video-camera',
