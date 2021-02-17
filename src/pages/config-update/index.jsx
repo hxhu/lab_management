@@ -1,5 +1,7 @@
+/* eslint-disable no-alert */
+/* eslint-disable default-case */
 /* eslint-disable prefer-template */
-import { InboxOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
+import { MinusCircleOutlined, PlusOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
 import {
     Button,
     Badge,
@@ -24,7 +26,9 @@ import moment from 'moment'
 import ReactJson from 'react-json-view'
 import {
     queryConfigList,
-    queryDeviceList
+    queryDeviceList,
+    createConfig,
+    deleteConfigById
 } from './service';
 
 const tailLayout = {
@@ -34,7 +38,14 @@ const layout = {
     labelCol: { span: 8 },
     wrapperCol: { span: 16 },
 };
+
 const { Option } = Select;
+const { confirm } = Modal;
+
+const sights = {
+    Beijing: ['Tiananmen', 'Great Wall'],
+    Shanghai: ['Oriental Pearl', 'The Bund'],
+};
 
 const ConfigUpdate = () => {
     const [configInfo, setConfigInfo] = useState([]);
@@ -43,6 +54,8 @@ const ConfigUpdate = () => {
 
     const [createVisible, setCreateVisible] = useState(false);
     const [updateVisible, setUpdateVisible] = useState(false);
+
+    const [configListFlag, setConfigListFlag] = useState(false);
 
     const [form] = Form.useForm();
     const [createForm] = Form.useForm();
@@ -110,8 +123,40 @@ const ConfigUpdate = () => {
                 <Button type="primary" onClick={() => chooseCurConfig(id)}>
                     选择
                 </Button>
+
                 <Button>
                     修改
+                </Button>
+
+                {/* 删除按钮 */}
+                <Button
+                    type="dashed"
+                    onClick={() => {
+                        confirm({
+                            title: '确认删除该设备？',
+                            icon: <ExclamationCircleOutlined />,
+                            content: `设备ID: ${id}`,
+                            async onOk() {
+                                // 删除设备
+                                await deleteConfigById({
+                                    "configId": id
+                                }).then(v => {
+                                    if (v.code === 2000) {
+                                        message.success("设备删除成功")
+                                    } else {
+                                        message.error("设备删除失败")
+                                    }
+                                })
+
+                            },
+                            onCancel() {
+                                message.warning("取消删除")
+                            },
+                        })
+                    }}
+                    danger
+                >
+                    删除
                 </Button>
             </Space>
         },
@@ -133,18 +178,43 @@ const ConfigUpdate = () => {
         }
 
         fetchData()
-    }, []);
+    }, [configListFlag]);
 
 
     // 表单相关
     const onFinish = values => {
-        console.log(values)
+        const result = {}
+        set(result, 'configId', curConfig)
+        set(result, 'deviceIds', get(values, 'target', []))
+        console.log(result)
     }
     const onReset = () => {
         form.resetFields();
     }
-    const onCreateFinish = values => {
-        console.log(values)
+    const onCreateFinish = async values => {
+        const configsTmp = get(values, 'configs', {})
+        const configs = {}
+        configsTmp.forEach(v => {
+            switch (v.type) {
+                case "int": set(configs, v.name, parseInt(v.value, 10)); break;
+                case "float": set(configs, v.name, parseFloat(v.value)); break;
+                case "string": set(configs, v.name, v.value); break;
+                case "boolean": set(configs, v.name, v.value === "True"); break;
+                default: break;
+            }
+        })
+        set(values, 'configs', configs)
+
+        await createConfig(values).then(v => {
+            if (v.code === 2000) {
+                message.success("新增参数组成功")
+            } else {
+                message.error("新增参数组失败")
+            }
+        })
+
+        setCreateVisible(false)
+        setConfigListFlag(!configListFlag)
     }
     const onCreateReset = () => {
         createForm.resetFields();
@@ -182,7 +252,6 @@ const ConfigUpdate = () => {
                     footer={null}
                 >
                     <Form
-                        {...layout}
                         form={createForm}
                         onFinish={onCreateFinish}
                         labelAlign="right"
@@ -206,17 +275,61 @@ const ConfigUpdate = () => {
                             <Input />
                         </Form.Item>
 
-                        {/* configs */}
-                        <Form.Item
-                            label="参数"
-                            name="configs"
-                            rules={[{ required: true, message: '需要修改!' }]}
-                        >
-                            <Input />
-                        </Form.Item>
+                        {/* 参数组 configs */}
+                        <Form.List name="configs">
+                            {(fields, { add, remove }) => (
+                                <>
+                                    {fields.map(field => (
+                                        <Space key={field.key} style={{ display: 'flex', marginBottom: 8 }} align="baseline">
+                                            {/* 参数名 */}
+                                            <Form.Item
+                                                {...field}
+                                                name={[field.name, 'name']}
+                                                fieldKey={[field.fieldKey, 'name']}
+                                                rules={[{ required: true, message: '请输入参数名' }]}
+                                            >
+                                                <Input placeholder="参数名" />
+                                            </Form.Item>
+
+                                            {/* 参数类型 */}
+                                            <Form.Item
+                                                {...field}
+                                                name={[field.name, 'type']}
+                                                fieldKey={[field.fieldKey, 'type']}
+                                                rules={[{ required: true, message: '请选择类型' }]}
+                                            >
+                                                <Select placeholder="类型" >
+                                                    <Option value="int">整型</Option>
+                                                    <Option value="float">浮点型</Option>
+                                                    <Option value="string">字符串型</Option>
+                                                    <Option value="boolean">布尔型</Option>
+                                                </Select>
+                                            </Form.Item>
+
+                                            {/* 参数值 */}
+                                            <Form.Item
+                                                {...field}
+                                                name={[field.name, 'value']}
+                                                fieldKey={[field.fieldKey, 'value']}
+                                                rules={[{ required: true, message: '请输入参数值' }]}
+                                            >
+                                                <Input placeholder="参数值" />
+                                            </Form.Item>
+
+                                            <MinusCircleOutlined onClick={() => remove(field.name)} />
+                                        </Space>
+                                    ))}
+                                    <Form.Item>
+                                        <Button type="dashed" onClick={() => add()} block icon={<PlusOutlined />}>
+                                            增加参数
+                                        </Button>
+                                    </Form.Item>
+                                </>
+                            )}
+                        </Form.List>
 
                         <Form.Item {...tailLayout}>
-                            <Button type="primary" htmlType="submit">修改</Button>
+                            <Button type="primary" htmlType="submit">提交</Button>
                             <Button htmlType="button" onClick={onCreateReset}>清空</Button>
                         </Form.Item>
                     </Form>
