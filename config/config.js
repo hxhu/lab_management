@@ -151,12 +151,12 @@ export default defineConfig({
               path: '/config-update',
               component: './config-update',
             },
-            // {
-            //   name: 'video-display',
-            //   icon: 'video-camera',
-            //   path: '/video-display',
-            //   component: './video-display',
-            // },
+            {
+              name: 'model-display',
+              icon: 'profile',
+              path: '/model-display',
+              component: './model-display',
+            },
             // {
             //   name: 'map-display',
             //   icon: 'environment',

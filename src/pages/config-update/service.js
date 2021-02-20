@@ -45,3 +45,12 @@ export async function queryDeviceList() {
     method: 'GET'
   })
 }
+
+// 推送配置
+export async function pushConfig(params) {
+  console.log(params)
+  return request('/api/EConfig/pushDownConfigs', {
+    method: 'POST',
+    data: params
+  })
+}

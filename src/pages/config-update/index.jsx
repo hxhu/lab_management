@@ -28,7 +28,8 @@ import {
     queryConfigList,
     queryDeviceList,
     createConfig,
-    deleteConfigById
+    deleteConfigById,
+    pushConfig
 } from './service';
 
 const tailLayout = {
@@ -182,11 +183,18 @@ const ConfigUpdate = () => {
 
 
     // 表单相关
-    const onFinish = values => {
+    const onFinish = async values => {
         const result = {}
-        set(result, 'configId', curConfig)
+        set(result, 'configId', get(curConfig, "id", ""))
         set(result, 'deviceIds', get(values, 'target', []))
-        console.log(result)
+
+        await pushConfig(result).then(v => {
+            if (v.code === 2000) {
+                message.success("推送参数成功")
+            } else {
+                message.error("推送参数失败")
+            }
+        })
     }
     const onReset = () => {
         form.resetFields();

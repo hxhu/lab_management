@@ -9,6 +9,7 @@ export default {
   'menu.data-upload': '数据上传',
   'menu.model-train': '模型训练',
   'menu.config-update': '参数更新',
+  'menu.model-display': '模型展示',
   'menu.more-blocks': '更多区块',
   'menu.home': '首页',
   'menu.admin': '管理页',
