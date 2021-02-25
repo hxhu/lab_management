@@ -29,6 +29,13 @@ export async function pushModel(params) {
   });
 }
 
+// 设备心跳
+export async function queryDeviceHeartbeat(params) {
+  return request('/api/ERHeartbeat/getById', {
+    method: 'GET',
+    params
+  })
+}
 
 
 export async function queryDeviceListByUserId(params) {

@@ -10,22 +10,41 @@ import {
     Form,
     Select,
     Result,
-    message
+    message,
+    Table,
+    Statistic,
+    Tag
 } from 'antd';
 import React, { useState, useRef, useEffect } from 'react';
 import { PageContainer, FooterToolbar } from '@ant-design/pro-layout';
 import { cloneDeep, get, set, has } from 'lodash'
 import moment from 'moment'
 import ReactJson from 'react-json-view'
-import { queryModelList, queryDeviceList, pushModel } from './service';
+import { queryModelList, queryDeviceList, pushModel, queryDeviceHeartbeat } from './service';
 
 const { Option } = Select;
+let timer = null;
 
 const VideoDisplay = () => {
     const [deviceOptions, setDeviceOptions] = useState([]);
     const [currentDevice, setCurrentDevice] = useState({});
     const [deviceInfo, setDeviceInfo] = useState([]);
+    const [curHeartbeat, setCurHeartbeat] = useState([]);
 
+    const [targetColor, setTargetColor] = useState({});
+
+    const tagColor = [
+        "red",
+        "green",
+        "orange",
+        "geekblue",
+        "gold",
+        "cyan",
+        "lime",
+        "blue",
+        "volcano",
+        "purple"]
+        
     // 请求设备列表
     const getDeviceList = async () => {
         try {
@@ -63,6 +82,92 @@ const VideoDisplay = () => {
         setCurrentDevice(currentDeviceTmp)
     }
 
+    // 获取心跳
+    useEffect(() => {
+        const getDeviceStatus = async (currentDevice) => {
+            if (has(currentDevice, 'id')) {
+                await queryDeviceHeartbeat({
+                    'deviceId': get(currentDevice, 'id', "")
+                }).then(v => {
+                    const targetColorTmp = {}
+                    if (v.code === 2000) {
+                        const result = []
+
+                        const targets = v.data.targets.split(";")
+                        targets.forEach(object => {
+                            const info = object.split(",")
+                            result.push({
+                                "class": info[0],
+                                "conf": info[1],
+                                "xmin": info[2],
+                                "xmax": info[3],
+                                "ymin": info[4],
+                                "ymax": info[5],
+                            })
+                            if( !has(targetColorTmp, info[0]) ){
+                                targetColorTmp[info[0]] = tagColor[Object.keys(targetColorTmp).length]
+                            }
+                            
+                        })
+
+                        setCurHeartbeat(result)
+                        setTargetColor(targetColorTmp)
+                    } else {
+                        message.error("查询心跳出错")
+                    }
+                })
+            }
+
+        }
+
+        timer = window.setInterval(() => {
+            getDeviceStatus(currentDevice)
+        }, 5000)
+
+        return () => { window.clearInterval(timer) }
+    }, [currentDevice])
+    const columns = [
+        {
+            key: 'class',
+            title: '类别',
+            dataIndex: 'class',
+            render: v => <Tag color={targetColor[v]}>{v}</Tag>
+        },
+        {
+            key: 'conf',
+            title: '置信度',
+            dataIndex: 'conf',
+            render: conf => {
+                const color = parseFloat(conf) > 80 ? '#3f8600' : '#cf1322'
+                return <Statistic
+                    value={parseFloat(conf)}
+                    precision={2}
+                    valueStyle={{ color: color }}
+                    suffix="%"
+                />
+            }
+        },
+        {
+            key: 'xmin',
+            title: 'xmin',
+            dataIndex: 'xmin',
+        },
+        {
+            key: 'xmax',
+            title: 'xmax',
+            dataIndex: 'xmax',
+        },
+        {
+            key: 'ymin',
+            title: 'ymin',
+            dataIndex: 'ymin',
+        },
+        {
+            key: 'ymax',
+            title: 'ymax',
+            dataIndex: 'ymax',
+        }
+    ]
 
     const tailLayout = {
         wrapperCol: { offset: 8, span: 16 },
@@ -87,7 +192,7 @@ const VideoDisplay = () => {
                                 </Form.Item>
 
                                 <Form.Item {...tailLayout}>
-                                    <Button type="primary" htmlType="submit">添加</Button>
+                                    <Button type="primary" htmlType="submit">选择</Button>
                                     <Button htmlType="button">还原</Button>
                                 </Form.Item>
                             </Form>
@@ -135,6 +240,10 @@ const VideoDisplay = () => {
                     </Descriptions>
                 </Card>
 
+                {/* 文本结果 */}
+                <Card>
+                    <Table columns={columns} dataSource={curHeartbeat} />
+                </Card>
             </Space>
 
         </PageContainer>
