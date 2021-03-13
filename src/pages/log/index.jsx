@@ -68,7 +68,27 @@ const Log = () => {
           case "-3":
             result = <Avatar style={{ backgroundColor: "#237804", verticalAlign: 'middle' }} size="large">M</Avatar>
             break;
-          default: break;
+          case "-4":
+            result = <Avatar style={{ backgroundColor: "#520339", verticalAlign: 'middle' }} size="large">C</Avatar>
+            break;
+          case "-5":
+            result = <Avatar style={{ backgroundColor: "#faad14", verticalAlign: 'middle' }} size="large">D</Avatar>
+            break;
+          case "-6":
+            result = <Avatar style={{ backgroundColor: "#237804", verticalAlign: 'middle' }} size="large">M</Avatar>
+            break;
+          case "-7":
+            result = <Avatar style={{ backgroundColor: "#520339", verticalAlign: 'middle' }} size="large">C</Avatar>
+            break;
+          case "-8":
+            result = <Avatar style={{ backgroundColor: "#faad14", verticalAlign: 'middle' }} size="large">D</Avatar>
+            break;
+          case "-9":
+            result = <Avatar style={{ backgroundColor: "#237804", verticalAlign: 'middle' }} size="large">M</Avatar>
+            break;
+          default:
+            result = <Avatar style={{ backgroundColor: "#9e1068", verticalAlign: 'middle' }} size="large">U</Avatar>
+            break;
         }
         return result
       }
@@ -123,7 +143,27 @@ const Log = () => {
           case "-3":
             result = <Avatar style={{ backgroundColor: "#237804", verticalAlign: 'middle' }} size="large">M</Avatar>
             break;
-          default: break;
+          case "-4":
+            result = <Avatar style={{ backgroundColor: "#520339", verticalAlign: 'middle' }} size="large">C</Avatar>
+            break;
+          case "-5":
+            result = <Avatar style={{ backgroundColor: "#faad14", verticalAlign: 'middle' }} size="large">D</Avatar>
+            break;
+          case "-6":
+            result = <Avatar style={{ backgroundColor: "#237804", verticalAlign: 'middle' }} size="large">M</Avatar>
+            break;
+          case "-7":
+            result = <Avatar style={{ backgroundColor: "#520339", verticalAlign: 'middle' }} size="large">C</Avatar>
+            break;
+          case "-8":
+            result = <Avatar style={{ backgroundColor: "#faad14", verticalAlign: 'middle' }} size="large">D</Avatar>
+            break;
+          case "-9":
+            result = <Avatar style={{ backgroundColor: "#237804", verticalAlign: 'middle' }} size="large">M</Avatar>
+            break;
+          default:
+            result = <Avatar style={{ backgroundColor: "#9e1068", verticalAlign: 'middle' }} size="large">U</Avatar>
+            break;
         }
         return result
       }
@@ -172,7 +212,27 @@ const Log = () => {
           case "-3":
             result = <Avatar style={{ backgroundColor: "#237804", verticalAlign: 'middle' }} size="large">M</Avatar>
             break;
-          default: break;
+          case "-4":
+            result = <Avatar style={{ backgroundColor: "#520339", verticalAlign: 'middle' }} size="large">C</Avatar>
+            break;
+          case "-5":
+            result = <Avatar style={{ backgroundColor: "#faad14", verticalAlign: 'middle' }} size="large">D</Avatar>
+            break;
+          case "-6":
+            result = <Avatar style={{ backgroundColor: "#237804", verticalAlign: 'middle' }} size="large">M</Avatar>
+            break;
+          case "-7":
+            result = <Avatar style={{ backgroundColor: "#520339", verticalAlign: 'middle' }} size="large">C</Avatar>
+            break;
+          case "-8":
+            result = <Avatar style={{ backgroundColor: "#faad14", verticalAlign: 'middle' }} size="large">D</Avatar>
+            break;
+          case "-9":
+            result = <Avatar style={{ backgroundColor: "#237804", verticalAlign: 'middle' }} size="large">M</Avatar>
+            break;
+          default:
+            result = <Avatar style={{ backgroundColor: "#9e1068", verticalAlign: 'middle' }} size="large">U</Avatar>
+            break;
         }
         return result
       }

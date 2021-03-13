@@ -1,5 +1,5 @@
 /* eslint-disable jsx-a11y/iframe-has-title */
-import { PlusOutlined } from '@ant-design/icons';
+import { ConsoleSqlOutlined, PlusOutlined } from '@ant-design/icons';
 import {
     Button,
     Descriptions,
@@ -30,6 +30,7 @@ const VideoDisplay = () => {
     const [currentDevice, setCurrentDevice] = useState({});
     const [deviceInfo, setDeviceInfo] = useState([]);
     const [curHeartbeat, setCurHeartbeat] = useState([]);
+    const [curMessage, setCurMessage] = useState({});
 
     const [targetColor, setTargetColor] = useState({});
 
@@ -44,7 +45,7 @@ const VideoDisplay = () => {
         "blue",
         "volcano",
         "purple"]
-        
+
     // 请求设备列表
     const getDeviceList = async () => {
         try {
@@ -89,6 +90,8 @@ const VideoDisplay = () => {
                 await queryDeviceHeartbeat({
                     'deviceId': get(currentDevice, 'id', "")
                 }).then(v => {
+                    console.log(v.data)
+
                     const targetColorTmp = {}
                     if (v.code === 2000) {
                         const result = []
@@ -104,10 +107,10 @@ const VideoDisplay = () => {
                                 "ymin": info[4],
                                 "ymax": info[5],
                             })
-                            if( !has(targetColorTmp, info[0]) ){
+                            if (!has(targetColorTmp, info[0])) {
                                 targetColorTmp[info[0]] = tagColor[Object.keys(targetColorTmp).length]
                             }
-                            
+
                         })
 
                         setCurHeartbeat(result)
@@ -243,6 +246,11 @@ const VideoDisplay = () => {
                 {/* 文本结果 */}
                 <Card>
                     <Table columns={columns} dataSource={curHeartbeat} />
+                </Card>
+
+                {/* 附加信息 */}
+                <Card title="个性化信息">
+                    <Statistic title="拥挤度" value={get(curHeartbeat, 'message', "comfortable")} />
                 </Card>
             </Space>
 

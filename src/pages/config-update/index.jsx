@@ -108,7 +108,8 @@ const ConfigUpdate = () => {
         {
             title: '更新时间',
             dataIndex: 'updateTime',
-            key: 'updateTime'
+            key: 'updateTime',
+            render: v => moment(v, 0).format('YYYY-MM-DD HH:mm:ss')
         },
         {
             title: '值',

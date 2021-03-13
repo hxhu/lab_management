@@ -1,3 +1,4 @@
+/* eslint-disable react/jsx-curly-brace-presence */
 import { PlusOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
 import {
   Button,
@@ -10,7 +11,9 @@ import {
   Select,
   Table,
   Modal,
-  message
+  message,
+  Radio,
+  DatePicker
 } from 'antd';
 import React, { useState, useRef, useEffect } from 'react';
 import { PageContainer, FooterToolbar } from '@ant-design/pro-layout';
@@ -22,6 +25,7 @@ import { queryModelList, queryDeviceList, pushModel } from './service';
 
 const { Option } = Select;
 const { confirm } = Modal;
+const { RangePicker } = DatePicker;
 
 const ModelPush = () => {
   const [modelOptions, setModelOptions] = useState([]);
@@ -31,6 +35,8 @@ const ModelPush = () => {
   const [currentDevices, setCurrentDevices] = useState([]);
   const [deviceInfo, setDeviceInfo] = useState([]);
   const [pushModelData, setPushModelData] = useState({});
+  const [updateTime, setUpdateTime] = useState("I"); // I F S
+  const [time, setTime] = useState("");
 
   const columns = [
     {
@@ -180,9 +186,12 @@ const ModelPush = () => {
       devicePushIds.push(v.id)
     })
 
+    const updateTimeTmp = updateTime === "S" ? updateTime + ";" + time : updateTime
+
     const result = {
       "deviceIds": devicePushIds,
       "modelId": currentModel.id,
+      "parttern": updateTimeTmp,
       "type": "points"
     }
     setPushModelData(result)
@@ -192,17 +201,21 @@ const ModelPush = () => {
     const devicePushIds = []
     deviceInfo.forEach(v => {
       devicePushIds.push(v.id)
-    }) 
+    })
+
+    const updateTimeTmp = updateTime === "S" ? updateTime + ";" + time : updateTime
 
     const result = {
       "deviceIds": devicePushIds,
       "modelId": currentModel.id,
+      "parttern": updateTimeTmp,
       "type": "boardcast"
     }
     setPushModelData(result)
   }
   useEffect(() => {
     const fetchData = async () => {
+      console.log(pushModelData)
       if (has(pushModelData, 'deviceIds')) {
         await pushModel(pushModelData).then(v => {
           if (v.code === 2000) {
@@ -216,6 +229,17 @@ const ModelPush = () => {
 
     fetchData()
   }, [pushModelData]);
+
+  // 更新模式设定
+  const onRadioChange = e => {
+    setUpdateTime(e.target.value)
+  }
+  const onTimeChange = (value, dateString) => {
+    setTime(dateString)
+  }
+  const onOk = (value) => {
+    console.log('OK is NO useful');
+  }
 
   const tailLayout = {
     wrapperCol: { offset: 8, span: 16 },
@@ -253,6 +277,24 @@ const ModelPush = () => {
             <Descriptions.Item label="生成时间">{moment(get(currentModel, 'createTime', 0)).format('YYYY-MM-DD HH:mm:ss')}</Descriptions.Item>
           </Descriptions>
         </Card>
+
+        {/* 更新方式设定 */}
+        <Card title="更新方式设定">
+          <Radio.Group onChange={onRadioChange}>
+            <Radio value="I">立即更新</Radio>
+            <Radio value="F">闲时更新</Radio>
+            <Radio value="S">固定时间更新</Radio>
+          </Radio.Group>
+        </Card>
+        {
+          <Card>
+            {
+              updateTime === "S"
+              ? <DatePicker showTime onChange={onTimeChange} onOk={onOk} />
+              : null
+            }
+          </Card>
+        }
 
         {/* 推送模型 boardcast*/}
         <Card>
